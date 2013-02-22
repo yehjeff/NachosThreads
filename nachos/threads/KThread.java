@@ -26,7 +26,7 @@ import nachos.machine.*;
  * PiRun p = new PiRun();
  * new KThread(p).fork();
  * </pre></blockquote>
- * hi
+ * hid
  */
 public class KThread {
     /**
