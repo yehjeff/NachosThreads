@@ -193,9 +193,14 @@ public class KThread {
 
 	Lib.assertTrue(toBeDestroyed == null);
 	toBeDestroyed = currentThread;
-
-
+	
+	KThread joinerThread = currentThread.joiner.nextThread();
+	if (joinerThread != null){
+		joinerThread.ready();
+	}
+	
 	currentThread.status = statusFinished;
+	
 	
 	sleep();
     }
@@ -279,7 +284,13 @@ public class KThread {
 	Lib.debug(dbgThread, "Joining to thread: " + toString());
 
 	Lib.assertTrue(this != currentThread);
-
+	
+	if (this.status == statusFinished){
+		return;
+    } else {
+    	joiner.waitForAccess(currentThread);
+    	currentThread.sleep();
+    }
     }
 
     /**
@@ -447,4 +458,8 @@ public class KThread {
     private static KThread currentThread = null;
     private static KThread toBeDestroyed = null;
     private static KThread idleThread = null;
+    
+    
+    private ThreadQueue joiner =
+    		ThreadedKernel.scheduler.newThreadQueue(true);
 }
