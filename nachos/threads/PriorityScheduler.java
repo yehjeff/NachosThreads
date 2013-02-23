@@ -178,7 +178,7 @@ public class PriorityScheduler extends Scheduler {
 		 * without modifying the state of this queue.
 		 *
 		 * @return	the next thread that <tt>nextThread()</tt> would
-		 *		return.
+		 *		return..
 		 */
 		protected ThreadState pickNextThread() {
 			// implement me
