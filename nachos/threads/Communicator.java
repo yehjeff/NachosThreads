@@ -37,15 +37,15 @@ public class Communicator {
     	communicatorLock.acquire();
     	speakerNotSentCount++;
     	while (listenerNotPairedCount == 0 || speakerNotConfirmed) {
-    		speakerWaiting.sleep()
+    		speakerWaiting.sleep();
     	}
     	listenerWaiting.wake();
-    	listenerNotPAired--;
+    	listenerNotPairedCount--;
     	wordToSend = word;
     	speakerNotConfirmed = true;
     	speakerConfirmed.sleep();
     	speakerNotConfirmed = false;
-    	if (speakerCount > -)
+    	if (speakerNotSentCount > 0)
     		speakerWaiting.wake();
     	communicatorLock.release();
     }
@@ -65,9 +65,9 @@ public class Communicator {
     	listenerNotPairedCount++;
     	listenerWaiting.sleep();
     	int temp = wordToSend; 	
-    	speakerConfirmed.wake()
-    	return temp;
+    	speakerConfirmed.wake();
     	communicatorLock.release();
+    	return temp;
     }
     
     /**
