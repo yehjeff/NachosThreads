@@ -10,6 +10,9 @@ import nachos.machine.*;
  * threads can be paired off at this point.
  * 
  * Row Row Fight da Powah!
+ * 
+ * Currently uses Condition.java to create condition variables, but
+ * probably should switch to condition2 when that gets finished.
  */
 public class Communicator {
     /**
