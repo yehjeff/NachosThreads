@@ -4,17 +4,18 @@ import nachos.ag.BoatGrader;
 public class Boat
 {
     static BoatGrader bg;
-	int numChildMolo;
-	int numChildOahu;
-	int numAdultMolo;
-	int numAdultOahu;
-	int boatLocation; //1=Oahu,2=Molokai
-	int numChildOnBoat;
-	boolean OahuSupposedlyEmpty;
-	Condition2 isFinished;
-	Condition2 isBoatOahu;
-	Condition2 isBoatMolo;
-	Lock lock;
+    static int numChildMolo;
+    static int numChildOahu;
+    static int numAdultMolo;
+    static int numAdultOahu;
+    static int boatLocation; //1=Oahu,2=Molokai
+    static int numChildOnBoat;
+    static boolean OahuSupposedlyEmpty;
+	static Condition2 isFinished;
+	static Condition2 isBoatOahu;
+	static Condition2 isBoatMolo;
+	static Lock lock;
+	static int testytesty;
     
     public static void selfTest()
     {
@@ -44,6 +45,8 @@ public class Boat
 	boatLocation = 1; //1=Oahu,2=Molokai
 	numChildOnBoat = 0;
 	OahuSupposedlyEmpty = false;
+	testytesty = 0; //delete later
+	isFinished = new Condition2(lock);
 	// Create threads here. See section 3.4 of the Nachos for Java
 	// Walkthrough linked from the projects page.
 
@@ -55,7 +58,15 @@ public class Boat
         KThread t = new KThread(r);
         t.setName("Sample Boat Thread");
         t.fork();
-
+        
+    System.out.println("\n ***Welp Shit Now What, Our design doc sucks... OAHUUUUU***");
+    
+    while (testytesty == 0) {
+    	lock.acquire();
+    	isFinished.sleep();
+    	lock.release();
+    }
+    
     }
 
     static void AdultItinerary()
@@ -78,11 +89,17 @@ public class Boat
 	// all of them on the boat). Please also note that you may not
 	// have a single thread calculate a solution and then just play
 	// it back at the autograder -- you will be caught.
+    String whereamI = "I AM ON MOLOKAI";
 	System.out.println("\n ***Everyone piles on the boat and goes to Molokai***");
+	System.out.println(whereamI);
 	bg.AdultRowToMolokai();
 	bg.ChildRideToMolokai();
 	bg.AdultRideToMolokai();
 	bg.ChildRideToMolokai();
+	testytesty = 1; //delete later
+	lock.acquire();
+	isFinished.wake();
+	lock.release();
     }
     
 }
