@@ -1,5 +1,7 @@
 package nachos.threads;
 
+import java.util.*;
+
 import nachos.machine.*;
 
 /**
@@ -27,7 +29,6 @@ public class Alarm {
      * that should be run.
      */
     public void timerInterrupt() {
-	KThread.currentThread().yield();
     }
 
     /**
@@ -50,4 +51,9 @@ public class Alarm {
 	while (wakeTime > Machine.timer().getTime())
 	    KThread.yield();
     }
+
+	/**
+	 * waitingThreads: a queue of KThreads to keep track of the threads waiting on the condition
+	 */
+	private PriorityQueue<KThread> waitingThreads;
 }

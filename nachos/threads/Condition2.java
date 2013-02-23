@@ -36,7 +36,6 @@ public class Condition2 {
 	 */
 	public void sleep() {
 		Lib.assertTrue(conditionLock.isHeldByCurrentThread());
-		conditionLock.release();
 		waitQueue.add(KThread.currentThread());
 		Machine.interrupt().disable();
 		conditionLock.release();
@@ -53,7 +52,7 @@ public class Condition2 {
 		Lib.assertTrue(conditionLock.isHeldByCurrentThread());
 		if (waitQueue.peek() != null) {
 	        KThread threadToSignal = waitQueue.poll();
-	        threadToSignal.ready();			
+	        threadToSignal.ready();
 		}
 	}
 
