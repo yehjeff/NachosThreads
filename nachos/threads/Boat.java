@@ -3,14 +3,14 @@ import nachos.ag.BoatGrader;
 
 public class Boat
 {
-	static BoatGrader bg;
-	static int numChildMolo;
-	static int numChildOahu;
-	static int numAdultMolo;
-	static int numAdultOahu;
-	static int boatLocation; //1=Oahu,2=Molokai
-	static int numChildOnBoat;
-	static boolean OahuSupposedlyEmpty;
+    static BoatGrader bg;
+    static int numChildMolo;
+    static int numChildOahu;
+    static int numAdultMolo;
+    static int numAdultOahu;
+    static int boatLocation; //1=Oahu,2=Molokai
+    static int numChildOnBoat;
+    static boolean OahuSupposedlyEmpty;
 	static Condition2 isFinished;
 	static Condition2 isBoatOahu;
 	static Condition2 isBoatMolo;
@@ -150,6 +150,7 @@ public class Boat
 		sleep(); //Jeffnote:how2currentThread.sleep?
 	}
 
+	
 	static void ChildItinerary()
 	{
 		//Child Thread Startup
@@ -229,5 +230,4 @@ public class Boat
 		//isFinished.wake();
 		//lock.release();
 	}
-
 }
