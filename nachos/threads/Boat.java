@@ -165,7 +165,7 @@ public class Boat
 					OahuSupposedlyEmpty = false; 
 					//System.out.println("The Islanders Believe They Are Done");
 					isFinished.wake(); //notify begin()
-					alarm.waitUntil(x seconds); //Jeffnote:what to do here? How long2sleep? Maybe like 1.0?
+					alarm.waitUntil(Xseconds); //Jeffnote:what to do here? How long2sleep? Maybe like 1.0?
 				} else {
 					bg.ChildRowToOahu();
 					numChildMolo--;
