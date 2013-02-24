@@ -27,4 +27,6 @@
 /ThreadedKernel.class
 /PriorityScheduler$ThreadState$ThreadStateComparator.class
 /PriorityScheduler$ThreadStateComparator.class
+/PriorityScheduler$PingTest.class
+/PriorityScheduler$LockDonationTest.class
 /Alarm$ThreadAndTime.class
