@@ -147,7 +147,7 @@ public class Boat
 		//wake up a child to row back
 		isBoatMolo.wake();
 		lock.release();
-		sleep(); //Jeffnote:how2currentThread.sleep?
+		KThread.sleep();
 	}
 
 	
