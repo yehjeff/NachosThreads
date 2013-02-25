@@ -167,6 +167,7 @@ public class Boat
 					System.out.println("The Islanders Believe They Are Done");
 					isFinished.wake(); //notify begin()
 					alarm.waitUntil((long)1.0); //Jeffnote:what to do here? How long2sleep? Maybe like 1.0?
+					System.out.println("Well they were wrong, there are "+(numChildOahu+numAdultOahu)+" people left on Oahu");
 				} else {
 					bg.ChildRowToOahu();
 					numChildMolo--;
