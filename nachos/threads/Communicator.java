@@ -37,23 +37,17 @@ public class Communicator {
      * @param	word	the integer to transfer.
      */
     public void speak(int word) {
-    	System.out.println("\nName of current thread: " + KThread.currentThread().getName());
-    	System.out.println("Speaker tries to acquire lock.");
     	communicatorLock.acquire();
-    	System.out.println("Lock Successfully acquired.");
     	speakerNotSentCount++;
-    	System.out.println("Number of seakers not sent: " + speakerNotSentCount);
-    	while (listenerNotPairedCount == 0 || speakerNotConfirmed) {
-    		System.out.println("Speaker going to sleep!.");
+    	while (listenerNotPairedCount == 0 || !speakerNotConfirmed) {
     		speakerWaiting.sleep();
     	}
-    	System.out.println("\nSpeaker waking up!.");
     	listenerWaiting.wake();
     	listenerNotPairedCount--;
     	wordToSend = word;
-    	speakerNotConfirmed = true;
+    	//speakerNotConfirmed = true;// moved to listener to correctly set 1st confirmed speaker
     	speakerConfirmed.sleep();
-    	speakerNotConfirmed = false;
+    	//speakerNotConfirmed = false; //when we hand over to the next speaker why set speakerNotConfirmed to false, just leave it
     	if (speakerNotSentCount > 0)
     		speakerWaiting.wake();
     	communicatorLock.release();
@@ -66,20 +60,18 @@ public class Communicator {
      * @return	the integer transferred.
      */    
     public int listen() {
-    	System.out.println("\nListener tries to acquire lock.");
     	communicatorLock.acquire();
     	if (speakerNotSentCount > 0 && !speakerNotConfirmed) {
+    		speakerNotConfirmed = true; // moved here from speak()
     		speakerWaiting.wake();
     		speakerNotSentCount--;
     	}
+    	
     	listenerNotPairedCount++;
-    	System.out.println("\nListener going to sleep!.");
     	listenerWaiting.sleep();
-    	System.out.println("\nListener waking up!.");
     	int temp = wordToSend; 	
     	speakerConfirmed.wake();
     	communicatorLock.release();
-    	System.out.println("\nSending word!.");
     	return temp;
     }
     
@@ -121,7 +113,9 @@ public class Communicator {
 		Communicator com = new Communicator();
 		System.out.println("\nCreating speaker 1, who should go to sleep");
 		
-		SpeakerTest speaker1 = new SpeakerTest(1, com);
+		/*
+		
+		SpeakerTest speaker1 = new SpeakerTest(10, com);
 		KThread firstSpeaker = new KThread(speaker1); // word == 1
 		firstSpeaker.setName("speaker1");
 		firstSpeaker.fork(); 
@@ -132,6 +126,40 @@ public class Communicator {
 		
 		System.out.println("\nThe set word is: " + com.wordToSend);
 		System.out.println("\nSingle Listener-Speaker test complete.");
+		
+		*/
+		
+		
+		/**
+		 * Test 2: 2 speakers, 2 listeners
+		 */
+		
+		
+		// Create first speaker
+		
+		SpeakerTest speaker1 = new SpeakerTest(5, com);
+		KThread firstSpeaker = new KThread(speaker1); // word == 5
+		firstSpeaker.setName("speaker1");
+		firstSpeaker.fork(); 
+		
+		SpeakerTest speaker2 = new SpeakerTest(10, com);
+		KThread Speaker2 = new KThread(speaker2); // word == 10
+		Speaker2.setName("speaker2");
+		Speaker2.fork(); 
+		
+		KThread firstListener = new KThread(new ListenerTest(com));
+		firstListener.setName("listener1");
+		firstListener.fork();
+
+		KThread Listener2 = new KThread(new ListenerTest(com));
+		Listener2.setName("listener2");
+		Listener2.fork();
+		
+		Speaker2.join();// join with the last thread to run
+
+		System.out.println("\nThe set word is: " + com.wordToSend);
+		System.out.println("\nSingle Listener-Speaker test complete.");
+		
 	}
     
     
