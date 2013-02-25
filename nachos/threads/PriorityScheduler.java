@@ -38,6 +38,9 @@ import java.util.Iterator;
  * 		implemented print function to print for PriorityQueue to print thread with 
  * 				resource's priority/ep and those in the queue
  * 
+ * 		Currently updating effective priortiy when we NEED it to be updated kinda (which is when we want to know the next thread in queue)
+ * 			but in the doc they said something like you only need to update it when it oculd have changed (could this suggest we should update it whenever 
+ * 			it can changes?)
  * 
  * might need to make sure none of the resourceQueues is the readyQueue 
  * testing:
@@ -285,6 +288,7 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		public int getEffectivePriority() {
 			// implement me
+			//this.updateEffectivePriority();
 			return cachedEffectivePriority;
 		}
 
