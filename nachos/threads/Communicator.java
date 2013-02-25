@@ -84,7 +84,7 @@ public class Communicator {
     private int listenerNotPairedCount = 0;
     private int wordToSend;
     private boolean speakerNotConfirmed = false;
-    private Condition speakerWaiting;
-    private Condition listenerWaiting;
-    private Condition speakerConfirmed;
+    private Condition2 speakerWaiting;
+    private Condition2 listenerWaiting;
+    private Condition2 speakerConfirmed;
 }
