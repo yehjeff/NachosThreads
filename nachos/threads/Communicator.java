@@ -130,8 +130,6 @@ public class Communicator {
 		firstSpeaker.join();// start execution of speaker1
 	//	speaker1.run(); // runs speaker 1, who should go straight to sleep
 		
-	
-		
 		System.out.println("\nThe set word is: " + com.wordToSend);
 		System.out.println("\nSingle Listener-Speaker test complete.");
 	}
