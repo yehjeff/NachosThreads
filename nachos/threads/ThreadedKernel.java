@@ -53,9 +53,9 @@ public class ThreadedKernel extends Kernel {
 		if (Machine.bank() != null) {
 			ElevatorBank.selfTest();
 		}
-		Condition2.selfTest();
-		Alarm.selfTest();
-		PriorityScheduler.selfTest();
+		//Condition2.selfTest();
+		//Alarm.selfTest();
+		//PriorityScheduler.selfTest();
 		Boat.selfTest();
 	}
 
