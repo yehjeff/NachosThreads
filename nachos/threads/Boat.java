@@ -11,9 +11,9 @@ public class Boat
     static int boatLocation; //1=Oahu,2=Molokai
     static int numChildOnBoat;
     static boolean OahuSupposedlyEmpty;
-	static Condition2 isFinished;
-	static Condition2 isBoatOahu;
-	static Condition2 isBoatMolo;
+	static Condition isFinished;
+	static Condition isBoatOahu;
+	static Condition isBoatMolo;
 	static Lock lock;
 	static Alarm alarm;
 	static int OAHU = 1;
@@ -28,21 +28,21 @@ public class Boat
 		//add one child to base case
 		System.out.println("\n ***Testing Boats with 3 children***");
 		begin(0, 3, b);
-//		//add one adult to base case
-//		System.out.println("\n ***Testing Boats with 2 children, 1 adult***");
-//		begin(1, 2, b);
-//		//add one of each to base case
-//		System.out.println("\n ***Testing Boats with 3 children, 1 adult***");
-//		begin(1, 3, b);
-//		//add multiple children to base case
-//		System.out.println("\n ***Testing Boats with 13 children***");
-//		begin(0, 13, b);
-//		//add multiple adults to base case
-//		System.out.println("\n ***Testing Boats with 2 children, 13 adults***");
-//		begin(13, 2, b);
-//		//add multiple of each to base case
-//		System.out.println("\n ***Testing Boats with 13 children, 13 adults***");
-//		begin(13, 13, b);
+		//add one adult to base case
+		System.out.println("\n ***Testing Boats with 2 children, 1 adult***");
+		begin(1, 2, b);
+		//add one of each to base case
+		System.out.println("\n ***Testing Boats with 3 children, 1 adult***");
+		begin(1, 3, b);
+		//add multiple children to base case
+		System.out.println("\n ***Testing Boats with 13 children***");
+		begin(0, 13, b);
+		//add multiple adults to base case
+		System.out.println("\n ***Testing Boats with 2 children, 13 adults***");
+		begin(13, 2, b);
+		//add multiple of each to base case
+		System.out.println("\n ***Testing Boats with 13 children, 13 adults***");
+		begin(13, 13, b);
 	}
 
 	public static void begin( int adults, int children, BoatGrader b )
@@ -63,9 +63,9 @@ public class Boat
 		numChildOnBoat = 0;
 		OahuSupposedlyEmpty = false;
 		
-		isFinished = new Condition2(lock);
-		isBoatMolo = new Condition2(lock);
-		isBoatOahu = new Condition2(lock);
+		isFinished = new Condition(lock);
+		isBoatMolo = new Condition(lock);
+		isBoatOahu = new Condition(lock);
 		
 		// Create threads here. See section 3.4 of the Nachos for Java
 		// Walkthrough linked from the projects page.
@@ -164,7 +164,7 @@ public class Boat
 				//Awake on Molokai==Guaranteed Empty Boat
 				if (OahuSupposedlyEmpty) {
 					OahuSupposedlyEmpty = false; 
-					//System.out.println("The Islanders Believe They Are Done");
+					System.out.println("The Islanders Believe They Are Done");
 					isFinished.wake(); //notify begin()
 					alarm.waitUntil((long)1.0); //Jeffnote:what to do here? How long2sleep? Maybe like 1.0?
 				} else {

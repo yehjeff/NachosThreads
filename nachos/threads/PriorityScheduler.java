@@ -171,8 +171,10 @@ public class PriorityScheduler extends Scheduler {
 			Lib.assertTrue(Machine.interrupt().disabled());
 			// implement me
 			if (threadWithResource != null) {
-				threadWithResource.resourceQueues.remove(this);
+				ThreadState previousThreadWithResource = threadWithResource;
 				threadWithResource = null;
+				previousThreadWithResource.resourceQueues.remove(this);
+			//	previousThreadWithResource.updateEffectivePriority();
 			}
 			
 			if (waitQueue.isEmpty())
@@ -180,7 +182,7 @@ public class PriorityScheduler extends Scheduler {
 			ArrayList<ThreadState> waitingThreads = new ArrayList<ThreadState>();
 			for (ThreadState threadState : waitQueue){
 				waitingThreads.add(threadState);
-				threadState.updateEffectivePriority();
+		//		threadState.updateEffectivePriority();
 			}
 			for (ThreadState threadState : waitingThreads){
 				waitQueue.remove(threadState);
@@ -188,7 +190,7 @@ public class PriorityScheduler extends Scheduler {
 				waitQueue.add(threadState);
 			}
 			threadWithResource = waitQueue.poll();
-			threadWithResource.resourceQueues.add(this);
+			threadWithResource.acquire(this);
 			return threadWithResource.thread;
 		}
 
@@ -203,12 +205,17 @@ public class PriorityScheduler extends Scheduler {
 			// implement me
 			if (waitQueue.isEmpty())
 				return null;
-			
+			ArrayList<ThreadState> waitingThreads = new ArrayList<ThreadState>();
 			for (ThreadState threadState : waitQueue){
+				waitingThreads.add(threadState);
+				threadState.updateEffectivePriority();
+			}
+			for (ThreadState threadState : waitingThreads){
 				waitQueue.remove(threadState);
 				threadState.updateEffectivePriority();
 				waitQueue.add(threadState);
 			}
+		
 			ThreadState nextThreadState = waitQueue.peek();
 			return nextThreadState;		
 		}
