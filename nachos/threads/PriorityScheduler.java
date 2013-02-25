@@ -48,7 +48,7 @@ import java.util.Iterator;
  */
 public class PriorityScheduler extends Scheduler {
 	/**
-	 * Allocate a new priority scheduler.
+	 * Allocatee a new priority scheduler.
 	 */
 	public PriorityScheduler() {
 	}
