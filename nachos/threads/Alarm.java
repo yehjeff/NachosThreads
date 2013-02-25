@@ -124,13 +124,11 @@ public class Alarm {
 		System.out.println("\nTesting 2 threads for various times");
 		KThread wakeUp1 = new KThread(new PingTest()).setName("wakeUp1");
 		wakeUp1.fork();
-		wakeUp1.join();
 		KThread wakeUp2 = new KThread(new PingTest()).setName("wakeUp2");
 		wakeUp2.fork();
-		wakeUp2.join();
 		KThread wakeUp3 = new KThread(new PingTest()).setName("wakeUp3");
 		wakeUp3.fork();
-		wakeUp3.join();
+		wakeUp1.join();
 		alarm.waitUntil(10000);
 		alarm.waitUntil(700);
 		alarm.waitUntil(1500);
