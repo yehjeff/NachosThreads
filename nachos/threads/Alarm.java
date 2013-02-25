@@ -103,7 +103,7 @@ public class Alarm {
 		PingTest() {
 		}
 		public void run() {
-			System.out.println("Thread " + KThread.currentThread().getName() + " will ring");
+			System.out.println("Thread " + KThread.currentThread().getName() + " will rings");
 		}
 	}
 
