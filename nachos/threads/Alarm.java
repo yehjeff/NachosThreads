@@ -20,7 +20,7 @@ public class Alarm {
 		Machine.timer().setInterruptHandler(new Runnable() {
 			public void run() { timerInterrupt(); }
 		});
-		this.waitingThreads = new PriorityQueue<ThreadAndTime>();
+		this.waitingThreads = new LinkedList<ThreadAndTime>();
 	}
 
 	/**
@@ -59,7 +59,9 @@ public class Alarm {
 		// KThread.yield();
 		long wakeTime = Machine.timer().getTime() + x;
 		waitingThreads.add(new ThreadAndTime(KThread.currentThread(), wakeTime));
+		boolean intStatus = Machine.interrupt().disable();
 		KThread.currentThread().sleep();
+		Machine.interrupt().restore(intStatus);
 	}
 
 
@@ -85,5 +87,5 @@ public class Alarm {
 	/**
 	 * waitingThreads: a queue of KThreads to keep track of the threads waiting on the condition
 	 */
-	private PriorityQueue<ThreadAndTime> waitingThreads;
+	private Queue<ThreadAndTime> waitingThreads;
 }

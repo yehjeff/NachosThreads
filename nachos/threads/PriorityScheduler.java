@@ -386,7 +386,7 @@ public class PriorityScheduler extends Scheduler {
 	 * 
 	 */
     public static void selfTest(){
-    	System.out.println("Entering PriorityScheduler.selfTest()");
+    	System.out.println("\n Entering PriorityScheduler.selfTest()");
     	KThread currentThread = KThread.currentThread();
     	
     	int threadZeroPriority;
