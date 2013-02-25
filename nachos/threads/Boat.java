@@ -166,7 +166,7 @@ public class Boat
 					OahuSupposedlyEmpty = false; 
 					//System.out.println("The Islanders Believe They Are Done");
 					isFinished.wake(); //notify begin()
-					alarm.waitUntil(Xseconds); //Jeffnote:what to do here? How long2sleep? Maybe like 1.0?
+					alarm.waitUntil((long)1.0); //Jeffnote:what to do here? How long2sleep? Maybe like 1.0?
 				} else {
 					bg.ChildRowToOahu();
 					numChildMolo--;
@@ -211,8 +211,8 @@ public class Boat
 					//rider doesn't need to sleep or wake anyone on Molo, outer while-loop will happen again
 				}
 			}
-		}	
-		lock.release();
+		}
+		//lock.release();
 	}
 
 	static void SampleItinerary()
