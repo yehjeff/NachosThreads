@@ -38,6 +38,12 @@ import java.util.Iterator;
  * 		implemented print function to print for PriorityQueue to print thread with 
  * 				resource's priority/ep and those in the queue
  * 
+ * 		Currently updating effective priortiy when we NEED it to be updated kinda (which is when we want to know the next thread in queue)
+ * 			but in the doc they said something like you only need to update it when it oculd have changed (could this suggest we should update it whenever 
+ * 			it can changes?)
+ * 				#### changed:
+ * 				#### currently assuming things within the waitingqueue dont change (Cuz they are sleeping). might not be true so...
+ * 				####		we could have references to donees (if our priority changed, then just check donee's with mine to see if they shoudl change too)
  * 
  * might need to make sure none of the resourceQueues is the readyQueue 
  * testing:
@@ -48,13 +54,13 @@ import java.util.Iterator;
  */
 public class PriorityScheduler extends Scheduler {
 	/**
-	 * Allocate a new priority scheduler.
+	 * Allocatee a new priority scheduler.
 	 */
 	public PriorityScheduler() {
 	}
 
-	
-	
+
+
 	/**
 	 * Allocate a new priority thread queue.
 	 *
@@ -171,25 +177,17 @@ public class PriorityScheduler extends Scheduler {
 		public KThread nextThread() {
 			Lib.assertTrue(Machine.interrupt().disabled());
 			// implement me
+			
+			
 			if (threadWithResource != null) {
 				ThreadState previousThreadWithResource = threadWithResource;
 				threadWithResource = null;
 				previousThreadWithResource.resourceQueues.remove(this);
-					previousThreadWithResource.updateEffectivePriority();
 			}
 
 			if (waitQueue.isEmpty())
 				return null;
-			ArrayList<ThreadState> waitingThreads = new ArrayList<ThreadState>();
-			for (ThreadState threadState : waitQueue){
-				waitingThreads.add(threadState);
-				//threadState.updateEffectivePriority();
-			}
-			for (ThreadState threadState : waitingThreads){
-				waitQueue.remove(threadState);
-				threadState.updateEffectivePriority();
-				waitQueue.add(threadState);
-			}
+			
 			threadWithResource = waitQueue.poll();
 			threadWithResource.acquire(this);
 			return threadWithResource.thread;
@@ -206,19 +204,10 @@ public class PriorityScheduler extends Scheduler {
 			// implement me
 			if (waitQueue.isEmpty())
 				return null;
-			ArrayList<ThreadState> waitingThreads = new ArrayList<ThreadState>();
-			for (ThreadState threadState : waitQueue){
-				waitingThreads.add(threadState);
-				threadState.updateEffectivePriority();
-			}
-			for (ThreadState threadState : waitingThreads){
-				waitQueue.remove(threadState);
-				threadState.updateEffectivePriority();
-				waitQueue.add(threadState);
-			}
-
-			ThreadState nextThreadState = waitQueue.peek();
-			return nextThreadState;		
+			return waitQueue.peek();
+			
+			
+			
 		}
 
 		public void print() {
@@ -285,6 +274,7 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		public int getEffectivePriority() {
 			// implement me
+			//this.updateEffectivePriority();
 			return cachedEffectivePriority;
 		}
 
@@ -298,7 +288,13 @@ public class PriorityScheduler extends Scheduler {
 				return;
 			int previousPriority = this.priority;
 			this.priority = priority;
-			if (this.priority > this.cachedEffectivePriority || previousPriority == this.cachedEffectivePriority)
+			for (ThreadState doneeThread : this.doneeList){
+				if (doneeThread.getEffectivePriority() < this.getEffectivePriority()){
+					doneeThread.cachedEffectivePriority = this.getEffectivePriority();
+				}
+			}
+			
+			if (this.priority > this.cachedEffectivePriority || previousPriority == this.cachedEffectivePriority) 
 				this.updateEffectivePriority();
 			//sadfdfadsSADF
 
@@ -320,11 +316,15 @@ public class PriorityScheduler extends Scheduler {
 		public void waitForAccess(PriorityQueue waitQueue) {
 			// implement me
 			this.setTimeEnqueued(Machine.timer().getTime());
-	//		Lib.assertTrue(waitQueue.threadWithResource != this);
 			if (waitQueue.threadWithResource == this){
 				waitQueue.threadWithResource.resourceQueues.remove(waitQueue);
 				waitQueue.threadWithResource.updateEffectivePriority();
 				waitQueue.threadWithResource = null;
+			}
+			if (waitQueue.threadWithResource != null) {
+				if (waitQueue.threadWithResource.getEffectivePriority() < this.getEffectivePriority())
+					waitQueue.threadWithResource.updateEffectivePriority();
+					this.doneeList.add(waitQueue.threadWithResource);
 			}
 			waitQueue.add(this);
 		}
@@ -341,6 +341,7 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		public void acquire(PriorityQueue waitQueue) {
 			this.resourceQueues.add(waitQueue);
+			this.updateEffectivePriority();
 		}	
 
 		public long getTimeEnqueued() {
@@ -352,23 +353,30 @@ public class PriorityScheduler extends Scheduler {
 		}
 		public void updateEffectivePriority(){
 			// do we even need a list of the donors? (how bout just values)
-			this.donorList.clear();
 			int maxDonorPriority = -1;
-
+			
 			for (PriorityQueue resourceQueue : this.resourceQueues){
-				for (ThreadState threadState : resourceQueue) {
-					Lib.assertTrue(threadState != this);
-					threadState.updateEffectivePriority();
-					donorList.add(threadState);
-					if (maxDonorPriority < threadState.getEffectivePriority())
-						maxDonorPriority = threadState.getEffectivePriority();
+				if (resourceQueue.transferPriority) {
+					for (ThreadState threadState : resourceQueue) {
+						Lib.assertTrue(threadState != this);
+				//		threadState.updateEffectivePriority();    not sure if necessary (assuming they are always up to date)
+						if (maxDonorPriority < threadState.getEffectivePriority())
+							maxDonorPriority = threadState.getEffectivePriority();
+					}
 				}
 			}
 
-			if (this.priority < maxDonorPriority)
+
+			if (this.priority < maxDonorPriority) {
 				this.cachedEffectivePriority = maxDonorPriority;
-			else
-				this.cachedEffectivePriority = this.priority;
+				for (ThreadState doneeThread : this.doneeList){
+					if (doneeThread.getEffectivePriority() < this.getEffectivePriority()){
+						doneeThread.cachedEffectivePriority = this.getEffectivePriority();
+					}
+				}
+			}
+			else 
+				this.cachedEffectivePriority = this.priority;		// i didnt change, so none of my children should change
 
 		}
 
@@ -388,8 +396,8 @@ public class PriorityScheduler extends Scheduler {
 		protected KThread thread;
 		/** The priority of the associated thread. */
 		protected int priority;
-
-		private LinkedList<ThreadState> donorList = new LinkedList<ThreadState>();
+		
+		private LinkedList<ThreadState> doneeList = new LinkedList<ThreadState>();
 		private LinkedList<PriorityQueue> resourceQueues = new LinkedList<PriorityQueue>();
 		private long timeEnqueued;
 		private int cachedEffectivePriority;
@@ -525,15 +533,15 @@ public class PriorityScheduler extends Scheduler {
 		ThreadedKernel.scheduler.decreasePriority();	
 		ThreadedKernel.scheduler.decreasePriority();	
 		ThreadedKernel.scheduler.decreasePriority();
-		
-		
+
+
 		System.out.println("\n\nNow with locks");
 		Lock lock = new Lock();
 		newThread = new KThread(new LockTest(1, lock, null));
 		newThread.fork();
 		newThread.join();
-		
-		
+
+
 
 	}
 
@@ -555,8 +563,8 @@ public class PriorityScheduler extends Scheduler {
 				Machine.interrupt().disable();
 
 				KThread.sleep();
-				 threadZeroPriority = ThreadedKernel.scheduler.getEffectivePriority(KThread.currentThread());
-					System.out.println("When Thread2 is waiting for lock: Thread 1's effecive priority: " + threadZeroPriority);
+				threadZeroPriority = ThreadedKernel.scheduler.getEffectivePriority(KThread.currentThread());
+				System.out.println("When Thread2 is waiting for lock: Thread 1's effecive priority: " + threadZeroPriority);
 				Machine.interrupt().enable();
 
 			} else if (this.which == 2){
@@ -565,8 +573,8 @@ public class PriorityScheduler extends Scheduler {
 				this.thread.ready();
 				lock.acquire();
 				Machine.interrupt().enable();
-			
-				
+
+
 			}
 		}
 		private KThread thread;
@@ -586,7 +594,7 @@ public class PriorityScheduler extends Scheduler {
 				int threadZeroPriority = ThreadedKernel.scheduler.getEffectivePriority(KThread.currentThread());
 				Machine.interrupt().enable();
 				System.out.println("After Thread 0's join call: Thread 1's effecive priority: " + threadZeroPriority);
-			
+
 				newThread.join();
 			} else {
 				Machine.interrupt().disable();
@@ -594,7 +602,7 @@ public class PriorityScheduler extends Scheduler {
 				Machine.interrupt().enable();
 				System.out.println("After Thread 1's join call: Thread 2's effecive priority: " + threadZeroPriority);
 			}
-			
+
 		}
 		private int which;
 	}

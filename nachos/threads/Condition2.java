@@ -104,9 +104,9 @@ public class Condition2 {
 			} else {
 				while (numWaiting > 0) {
 					cond.wake();
-					numWaiting--;
+//					numWaiting--;
 //					cond.wakeAll();
-//					numWaiting = 0;
+					numWaiting = 0;
 				}
 			}
 			lock.release();
@@ -115,7 +115,6 @@ public class Condition2 {
 		private Condition2 cond;
 		private Lock lock;
 		private static int numWaiting = 0;
-		private static boolean wakeAll = false;
 	}
 
 
