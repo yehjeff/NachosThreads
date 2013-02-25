@@ -286,13 +286,13 @@ public class PriorityScheduler extends Scheduler {
 		public void setPriority(int priority) {
 			if (this.priority == priority)
 				return;
-			int previousPriority = this.priority;
+		//	int previousPriority = this.priority;
 			this.priority = priority;
-			if (this.priority > this.cachedEffectivePriority || previousPriority == this.cachedEffectivePriority) 
-				this.updateEffectivePriority();
+		//	if (this.priority > this.cachedEffectivePriority || previousPriority == this.cachedEffectivePriority) just update it bro
+			this.updateEffectivePriority();
 			for (ThreadState doneeThread : this.doneeList){
 				if (doneeThread.getEffectivePriority() < this.getEffectivePriority()){
-					doneeThread.cachedEffectivePriority = this.getEffectivePriority();
+					doneeThread.updateEffectivePriority();
 				}
 			}
 			
@@ -324,7 +324,8 @@ public class PriorityScheduler extends Scheduler {
 			}
 			if (waitQueue.threadWithResource != null) {
 				if (waitQueue.threadWithResource.getEffectivePriority() < this.getEffectivePriority())
-					waitQueue.threadWithResource.cachedEffectivePriority = this.getEffectivePriority();
+	//				waitQueue.threadWithResource.cachedEffectivePriority = this.getEffectivePriority();
+					waitQueue.threadWithResource.updateEffectivePriority();		// JUST IN CASE, actually yea kinda need it
 					this.doneeList.add(waitQueue.threadWithResource);
 			}
 			waitQueue.add(this);
@@ -343,6 +344,8 @@ public class PriorityScheduler extends Scheduler {
 		public void acquire(PriorityQueue waitQueue) {
 			this.resourceQueues.add(waitQueue);
 			waitQueue.threadWithResource = this;
+			if (this.doneeList.contains(waitQueue))
+				this.doneeList.remove(waitQueue);
 			this.updateEffectivePriority();
 		}	
 
@@ -373,11 +376,11 @@ public class PriorityScheduler extends Scheduler {
 				this.cachedEffectivePriority = maxDonorPriority;
 				
 			else 
-				this.cachedEffectivePriority = this.priority;		// i didnt change, so none of my children should change
+				this.cachedEffectivePriority = this.priority;		
 
 			for (ThreadState doneeThread : this.doneeList){
 				if (doneeThread.getEffectivePriority() < this.getEffectivePriority()){
-					doneeThread.cachedEffectivePriority = this.getEffectivePriority();
+					doneeThread.updateEffectivePriority();
 				}
 			}
 		}
