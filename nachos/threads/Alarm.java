@@ -32,7 +32,7 @@ public class Alarm {
 	public void timerInterrupt() {
 		for (ThreadAndTime pair : waitingThreads) {
 			if (Machine.timer().getTime() >= pair.getTime()) {
-				pair.getThread().ready();
+				((nachos.threads.KThread) pair.getThread()).ready();
 				waitingThreads.remove(pair.getThread());
 			}
 		}
