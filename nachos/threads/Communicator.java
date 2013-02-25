@@ -37,17 +37,24 @@ public class Communicator {
      * @param	word	the integer to transfer.
      */
     public void speak(int word) {
+    	System.out.println("\nThe word given is: " + word + " for thread " + KThread.currentThread().getName());
     	communicatorLock.acquire();
     	speakerNotSentCount++;
-    	while (listenerNotPairedCount == 0 || !speakerNotConfirmed) {
+    	while (listenerNotPairedCount == 0 || speakerNotConfirmed) { // a 2nd speaker can screw over the first speaker, how to prevent?
+    		
+    		System.out.println("\n" + KThread.currentThread().getName() + " wakes up in while loop");
     		speakerWaiting.sleep();
     	}
+    	System.out.println("Current running speaker that will set the word is " + KThread.currentThread().getName());
+    	speakerNotConfirmed = true;
     	listenerWaiting.wake();
-    	listenerNotPairedCount--;
+    	//listenerNotPairedCount--;
     	wordToSend = word;
     	//speakerNotConfirmed = true;// moved to listener to correctly set 1st confirmed speaker
+    	System.out.println("Setting the word to: " + wordToSend);
     	speakerConfirmed.sleep();
-    	//speakerNotConfirmed = false; //when we hand over to the next speaker why set speakerNotConfirmed to false, just leave it
+    	System.out.println("Speaker waking 2nd time");
+    	speakerNotConfirmed = false; //when we hand over to the next speaker why set speakerNotConfirmed to false, just leave it
     	if (speakerNotSentCount > 0)
     		speakerWaiting.wake();
     	communicatorLock.release();
@@ -60,15 +67,23 @@ public class Communicator {
      * @return	the integer transferred.
      */    
     public int listen() {
+    	System.out.println("\n" + KThread.currentThread().getName() + " is waking up");
     	communicatorLock.acquire();
-    	if (speakerNotSentCount > 0 && !speakerNotConfirmed) {
-    		speakerNotConfirmed = true; // moved here from speak()
+    	listenerNotPairedCount++;
+    	if (speakerNotSentCount > 0 && !speakerNotConfirmed && listenerConfirmation == false) {
+    		//speakerNotConfirmed = true; // moved here from speak()
+    		System.out.println("waking up a speaker");
     		speakerWaiting.wake();
     		speakerNotSentCount--;
+    		listenerConfirmation = true; // we don't want a 2nd listener waking up a 2nd speaker.
+    										// can this break other things? 
+    										// as long as the 2nd listener comes after a speaker or a
+    		listenerNotPairedCount--;
     	}
     	
-    	listenerNotPairedCount++;
+    	;
     	listenerWaiting.sleep();
+    	System.out.println("\nThe word to send is: " + wordToSend + "\n");
     	int temp = wordToSend; 	
     	speakerConfirmed.wake();
     	communicatorLock.release();
@@ -111,8 +126,7 @@ public class Communicator {
 		
 		
 		Communicator com = new Communicator();
-		System.out.println("\nCreating speaker 1, who should go to sleep");
-		
+
 		/*
 		
 		SpeakerTest speaker1 = new SpeakerTest(10, com);
@@ -136,24 +150,53 @@ public class Communicator {
 		
 		
 		// Create first speaker
-		
 		SpeakerTest speaker1 = new SpeakerTest(5, com);
 		KThread firstSpeaker = new KThread(speaker1); // word == 5
 		firstSpeaker.setName("speaker1");
-		firstSpeaker.fork(); 
+		firstSpeaker.fork();
+		
+		
+		KThread firstListener = new KThread(new ListenerTest(com));
+		firstListener.setName("listener1");
+		firstListener.fork();
 		
 		SpeakerTest speaker2 = new SpeakerTest(10, com);
 		KThread Speaker2 = new KThread(speaker2); // word == 10
 		Speaker2.setName("speaker2");
 		Speaker2.fork(); 
 		
-		KThread firstListener = new KThread(new ListenerTest(com));
-		firstListener.setName("listener1");
-		firstListener.fork();
-
 		KThread Listener2 = new KThread(new ListenerTest(com));
 		Listener2.setName("listener2");
 		Listener2.fork();
+		
+		
+		
+		
+		
+		
+		
+		
+		
+
+		
+		
+		
+		
+		
+		
+
+		
+		
+		
+		
+
+		
+		
+		
+	
+		
+		
+		
 		
 		Speaker2.join();// join with the last thread to run
 
@@ -177,6 +220,7 @@ public class Communicator {
     private int listenerNotPairedCount = 0;
     private int wordToSend;
     private boolean speakerNotConfirmed = false;
+    private boolean listenerConfirmation = false;
     private Condition2 speakerWaiting;
     private Condition2 listenerWaiting;
     private Condition2 speakerConfirmed;
