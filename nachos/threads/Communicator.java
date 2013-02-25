@@ -140,7 +140,7 @@ public class Communicator {
      * listenerNotPairedCount: The number of listeners who have not been paired with a speaker yet
      * speakerNotConfirmed: A speaker who has sent its word and is waiting for confirmation from listener.
      * speakerWaiting: a condition variable for speakers waiting to be paired with a listener
-     * listenerWaiting: a condition variable for listeners waiting to be paired with a speaer
+     * listenerWaiting: a condition variable for listeners waiting to be paired with a speaker
      * speakerConfirmed: a condition variable to put the confirmed speaker to sleep (the one setting the word)
      */
     
