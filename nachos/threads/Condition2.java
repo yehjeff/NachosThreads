@@ -44,7 +44,6 @@ public class Condition2 {
 		numThreadsInQueue++; //TESTING STUFF
 		System.out.println("There are " + numThreadsInQueue + " threads in the wait queue");
 		KThread.currentThread().sleep();
-		System.out.println("Thread " + KThread.currentThread().getName() + " has woken up");
 		conditionLock.acquire();
 		Machine.interrupt().enable();
 	}
@@ -58,6 +57,7 @@ public class Condition2 {
 		if (waitQueue.peek() != null) {
 			KThread threadToSignal = waitQueue.poll();
 			numThreadsInQueue--; //TESTING STUFF
+			System.out.println("Thread " + KThread.currentThread().getName() + " has woken up");
 			System.out.println("There are " + numThreadsInQueue + " threads in the wait queue");
 			boolean intStatus = Machine.interrupt().disable();
 			threadToSignal.ready();
@@ -105,6 +105,8 @@ public class Condition2 {
 				while (numWaiting > 0) {
 					cond.wake();
 					numWaiting--;
+//					cond.wakeAll();
+//					numWaiting = 0;
 				}
 			}
 			lock.release();
@@ -124,7 +126,7 @@ public class Condition2 {
 		Condition2 conditionVar = new Condition2(lock);
 
 
-		System.out.println("\n ***Testing sleep and wake***");
+		System.out.println("\n***Testing sleep and wake***");
 		for (int i = 0; i < 3; i++) {
 			KThread newThread = new KThread(new PingTest(i+1,conditionVar,lock));
 			newThread.setName("" + i);
