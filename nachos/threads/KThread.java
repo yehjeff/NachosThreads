@@ -291,14 +291,14 @@ public class KThread {
 
 		Lib.assertTrue(this != currentThread);
 		boolean intStatus = Machine.interrupt().disable();
-
-		if (this.status == statusFinished){
+		Lib.assertTrue(joiner.nextThread() == null);
+		if (this.status == statusFinished || this.status == statusNew){
 			Machine.interrupt().restore(intStatus);
 			return;
 		} else {
 			joiner.acquire(this);
 			joiner.waitForAccess(currentThread);
-			currentThread.sleep();
+			sleep();
 			Machine.interrupt().restore(intStatus);
 		}
 		

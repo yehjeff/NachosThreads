@@ -510,7 +510,7 @@ public class PriorityScheduler extends Scheduler {
 			for (int i=0; i<5; i++) {
 				System.out.println("*** thread " + which + " looped "
 						+ i + " times");
-				KThread.currentThread().yield();
+				KThread.yield();
 			}
 		}
 
