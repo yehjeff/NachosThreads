@@ -174,25 +174,17 @@ public class PriorityScheduler extends Scheduler {
 		public KThread nextThread() {
 			Lib.assertTrue(Machine.interrupt().disabled());
 			// implement me
+			
+			
 			if (threadWithResource != null) {
 				ThreadState previousThreadWithResource = threadWithResource;
 				threadWithResource = null;
 				previousThreadWithResource.resourceQueues.remove(this);
-				previousThreadWithResource.updateEffectivePriority();
 			}
 
 			if (waitQueue.isEmpty())
 				return null;
-			ArrayList<ThreadState> waitingThreads = new ArrayList<ThreadState>();
-			for (ThreadState threadState : waitQueue){
-				waitingThreads.add(threadState);
-				//threadState.updateEffectivePriority();
-			}
-			for (ThreadState threadState : waitingThreads){
-				waitQueue.remove(threadState);
-				threadState.updateEffectivePriority();
-				waitQueue.add(threadState);
-			}
+			
 			threadWithResource = waitQueue.poll();
 			threadWithResource.acquire(this);
 			return threadWithResource.thread;
@@ -209,19 +201,10 @@ public class PriorityScheduler extends Scheduler {
 			// implement me
 			if (waitQueue.isEmpty())
 				return null;
-			ArrayList<ThreadState> waitingThreads = new ArrayList<ThreadState>();
-			for (ThreadState threadState : waitQueue){
-				waitingThreads.add(threadState);
-				threadState.updateEffectivePriority();
-			}
-			for (ThreadState threadState : waitingThreads){
-				waitQueue.remove(threadState);
-				threadState.updateEffectivePriority();
-				waitQueue.add(threadState);
-			}
-
-			ThreadState nextThreadState = waitQueue.peek();
-			return nextThreadState;		
+			return waitQueue.peek();
+			
+			
+			
 		}
 
 		public void print() {
@@ -324,11 +307,14 @@ public class PriorityScheduler extends Scheduler {
 		public void waitForAccess(PriorityQueue waitQueue) {
 			// implement me
 			this.setTimeEnqueued(Machine.timer().getTime());
-			//		Lib.assertTrue(waitQueue.threadWithResource != this);
 			if (waitQueue.threadWithResource == this){
 				waitQueue.threadWithResource.resourceQueues.remove(waitQueue);
 				waitQueue.threadWithResource.updateEffectivePriority();
 				waitQueue.threadWithResource = null;
+			}
+			if (waitQueue.threadWithResource != null) {
+			if (waitQueue.threadWithResource.getEffectivePriority() < this.getEffectivePriority())
+				waitQueue.threadWithResource.updateEffectivePriority();
 			}
 			waitQueue.add(this);
 		}
@@ -345,6 +331,7 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		public void acquire(PriorityQueue waitQueue) {
 			this.resourceQueues.add(waitQueue);
+			this.updateEffectivePriority();
 		}	
 
 		public long getTimeEnqueued() {
