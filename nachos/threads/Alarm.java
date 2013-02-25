@@ -34,8 +34,8 @@ public class Alarm {
 			if (Machine.timer().getTime() >= pair.getTime()) {
 				((nachos.threads.KThread) pair.getThread()).ready();
 				waitingThreads.remove(pair);
-				System.out.println("Thread " + ((nachos.threads.KThread) pair.getThread()).getName() 
-						+ " was woken up at " + Machine.timer().getTime());
+//				System.out.println("Thread " + ((nachos.threads.KThread) pair.getThread()).getName() 
+//						+ " was woken up at " + Machine.timer().getTime());
 			}
 		}
 	}
@@ -60,10 +60,10 @@ public class Alarm {
 		// while (wakeTime > Machine.timer().getTime())
 		// KThread.yield();
 		long wakeTime = Machine.timer().getTime() + x;
-		System.out.println("Thread " + KThread.currentThread().getName() 
-				+ " was added to the queue at " + Machine.timer().getTime());
-		System.out.println("Thread " + KThread.currentThread().getName() 
-				+ " will wait for " + x + " seconds");
+//		System.out.println("Thread " + KThread.currentThread().getName() 
+//				+ " was added to the queue at " + Machine.timer().getTime());
+//		System.out.println("Thread " + KThread.currentThread().getName() 
+//				+ " will wait for " + x + " seconds");
 		waitingThreads.add(new ThreadAndTime(KThread.currentThread(), wakeTime));
 		boolean intStatus = Machine.interrupt().disable();
 		KThread.currentThread().sleep();
@@ -113,19 +113,27 @@ public class Alarm {
 		Alarm alarm = new Alarm();
 		
 		System.out.println("\nTesting 1 thread for 1 second");
-//		KThread wakeUp1 = new KThread(new PingTest()).setName("wakeUp1");
-//		wakeUp1.fork();
 		alarm.waitUntil(1);
 
 		System.out.println("\nTesting 1 thread for 10 seconds");
-//		KThread wakeUp2 = new KThread(new PingTest()).setName("wakeUp2");
-//		wakeUp2.fork();
 		alarm.waitUntil(10);
 		
 		System.out.println("\nTesting 1 thread for 1000 seconds");
-//		KThread wakeUp3 = new KThread(new PingTest()).setName("wakeUp3");
-//		wakeUp3.fork();
 		alarm.waitUntil(1000);
+		
+		System.out.println("\nTesting 2 threads for various times");
+		KThread wakeUp1 = new KThread(new PingTest()).setName("wakeUp1");
+		wakeUp1.fork();
+		wakeUp1.join();
+		KThread wakeUp2 = new KThread(new PingTest()).setName("wakeUp2");
+		wakeUp2.fork();
+		wakeUp2.join();
+		KThread wakeUp3 = new KThread(new PingTest()).setName("wakeUp3");
+		wakeUp3.fork();
+		wakeUp3.join();
+		alarm.waitUntil(10000);
+		alarm.waitUntil(700);
+		alarm.waitUntil(1500);
 		
 		System.out.println("\n Finished testing Alarm.java");
 	}

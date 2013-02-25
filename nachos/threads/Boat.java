@@ -28,21 +28,21 @@ public class Boat
 		//add one child to base case
 		System.out.println("\n ***Testing Boats with 3 children***");
 		begin(0, 3, b);
-		//add one adult to base case
-		System.out.println("\n ***Testing Boats with 2 children, 1 adult***");
-		begin(1, 2, b);
-		//add one of each to base case
-		System.out.println("\n ***Testing Boats with 3 children, 1 adult***");
-		begin(1, 3, b);
-		//add multiple children to base case
-		System.out.println("\n ***Testing Boats with 13 children***");
-		begin(0, 13, b);
-		//add multiple adults to base case
-		System.out.println("\n ***Testing Boats with 2 children, 13 adults***");
-		begin(13, 2, b);
-		//add multiple of each to base case
-		System.out.println("\n ***Testing Boats with 13 children, 13 adults***");
-		begin(13, 13, b);
+//		//add one adult to base case
+//		System.out.println("\n ***Testing Boats with 2 children, 1 adult***");
+//		begin(1, 2, b);
+//		//add one of each to base case
+//		System.out.println("\n ***Testing Boats with 3 children, 1 adult***");
+//		begin(1, 3, b);
+//		//add multiple children to base case
+//		System.out.println("\n ***Testing Boats with 13 children***");
+//		begin(0, 13, b);
+//		//add multiple adults to base case
+//		System.out.println("\n ***Testing Boats with 2 children, 13 adults***");
+//		begin(13, 2, b);
+//		//add multiple of each to base case
+//		System.out.println("\n ***Testing Boats with 13 children, 13 adults***");
+//		begin(13, 13, b);
 	}
 
 	public static void begin( int adults, int children, BoatGrader b )
