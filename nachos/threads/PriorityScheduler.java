@@ -288,7 +288,13 @@ public class PriorityScheduler extends Scheduler {
 				return;
 			int previousPriority = this.priority;
 			this.priority = priority;
-			if (this.priority > this.cachedEffectivePriority || previousPriority == this.cachedEffectivePriority)
+			for (ThreadState doneeThread : this.doneeList){
+				if (doneeThread.getEffectivePriority() < this.getEffectivePriority()){
+					doneeThread.cachedEffectivePriority = this.getEffectivePriority();
+				}
+			}
+			
+			if (this.priority > this.cachedEffectivePriority || previousPriority == this.cachedEffectivePriority) 
 				this.updateEffectivePriority();
 			//sadfdfadsSADF
 
@@ -316,8 +322,9 @@ public class PriorityScheduler extends Scheduler {
 				waitQueue.threadWithResource = null;
 			}
 			if (waitQueue.threadWithResource != null) {
-			if (waitQueue.threadWithResource.getEffectivePriority() < this.getEffectivePriority())
-				waitQueue.threadWithResource.updateEffectivePriority();
+				if (waitQueue.threadWithResource.getEffectivePriority() < this.getEffectivePriority())
+					waitQueue.threadWithResource.updateEffectivePriority();
+					this.doneeList.add(waitQueue.threadWithResource);
 			}
 			waitQueue.add(this);
 		}
@@ -346,15 +353,13 @@ public class PriorityScheduler extends Scheduler {
 		}
 		public void updateEffectivePriority(){
 			// do we even need a list of the donors? (how bout just values)
-			this.donorList.clear();
 			int maxDonorPriority = -1;
-
+			
 			for (PriorityQueue resourceQueue : this.resourceQueues){
 				if (resourceQueue.transferPriority) {
 					for (ThreadState threadState : resourceQueue) {
 						Lib.assertTrue(threadState != this);
-						threadState.updateEffectivePriority();
-						donorList.add(threadState);
+				//		threadState.updateEffectivePriority();    not sure if necessary (assuming they are always up to date)
 						if (maxDonorPriority < threadState.getEffectivePriority())
 							maxDonorPriority = threadState.getEffectivePriority();
 					}
@@ -362,10 +367,16 @@ public class PriorityScheduler extends Scheduler {
 			}
 
 
-			if (this.priority < maxDonorPriority)
+			if (this.priority < maxDonorPriority) {
 				this.cachedEffectivePriority = maxDonorPriority;
-			else
-				this.cachedEffectivePriority = this.priority;
+				for (ThreadState doneeThread : this.doneeList){
+					if (doneeThread.getEffectivePriority() < this.getEffectivePriority()){
+						doneeThread.cachedEffectivePriority = this.getEffectivePriority();
+					}
+				}
+			}
+			else 
+				this.cachedEffectivePriority = this.priority;		// i didnt change, so none of my children should change
 
 		}
 
@@ -385,8 +396,8 @@ public class PriorityScheduler extends Scheduler {
 		protected KThread thread;
 		/** The priority of the associated thread. */
 		protected int priority;
-
-		private LinkedList<ThreadState> donorList = new LinkedList<ThreadState>();
+		
+		private LinkedList<ThreadState> doneeList = new LinkedList<ThreadState>();
 		private LinkedList<PriorityQueue> resourceQueues = new LinkedList<PriorityQueue>();
 		private long timeEnqueued;
 		private int cachedEffectivePriority;
