@@ -28,16 +28,26 @@ public class Alarm {
 	 * periodically (approximately every 500 clock ticks). Causes the current
 	 * thread to yield, forcing a context switch if there is another thread
 	 * that should be run.
+	 * 
+	 * wakeUpList	queue of ThreadAndTime pairs that keeps track of what threads
+	 * 				are ready to be woken up (takes care of concurrent modification
+	 * 				error?)
 	 */
 	public void timerInterrupt() {
+		Queue<ThreadAndTime> wakeUpList = new LinkedList<ThreadAndTime>();
+		
 		for (ThreadAndTime pair : waitingThreads) {
 			if (Machine.timer().getTime() >= pair.getTime()) {
 				((nachos.threads.KThread) pair.getThread()).ready();
-				waitingThreads.remove(pair);
+				wakeUpList.add(pair);
 				System.out.println("Thread " + ((nachos.threads.KThread) pair.getThread()).getName() 
 						+ " was woken up at " + Machine.timer().getTime());
 			}
 		}
+		for (ThreadAndTime pair : wakeUpList) {
+			waitingThreads.remove(pair);
+		}
+		wakeUpList.clear();
 	}
 
 	/**
@@ -124,13 +134,11 @@ public class Alarm {
 		System.out.println("\nTesting 2 threads for various times");
 		KThread wakeUp1 = new KThread(new PingTest()).setName("wakeUp1");
 		wakeUp1.fork();
-		wakeUp1.join();
 		KThread wakeUp2 = new KThread(new PingTest()).setName("wakeUp2");
 		wakeUp2.fork();
-		wakeUp2.join();
 		KThread wakeUp3 = new KThread(new PingTest()).setName("wakeUp3");
 		wakeUp3.fork();
-		wakeUp3.join();
+		wakeUp1.join();
 		alarm.waitUntil(10000);
 		alarm.waitUntil(700);
 		alarm.waitUntil(1500);
