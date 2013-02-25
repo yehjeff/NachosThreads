@@ -53,11 +53,8 @@ public class ThreadedKernel extends Kernel {
 			ElevatorBank.selfTest();
 		}
 		Condition2.selfTest();
-<<<<<<< HEAD
 	//	Alarm.selfTest();
-=======
 		Alarm.selfTest();
->>>>>>> branch 'master' of https://github.com/yehjeff/NachosThreads.git
 		PriorityScheduler.selfTest();
 		//Boat.selfTest();
 	}
