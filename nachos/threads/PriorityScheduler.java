@@ -53,6 +53,8 @@ public class PriorityScheduler extends Scheduler {
 	public PriorityScheduler() {
 	}
 
+	
+	
 	/**
 	 * Allocate a new priority thread queue.
 	 *
@@ -141,8 +143,8 @@ public class PriorityScheduler extends Scheduler {
 
 		return (ThreadState) thread.schedulingState;
 	}
-	
-	
+
+
 
 	/**
 	 * A <tt>ThreadQueue</tt> that sorts threads by priority.
@@ -159,10 +161,9 @@ public class PriorityScheduler extends Scheduler {
 
 		public void acquire(KThread thread) {
 			Lib.assertTrue(Machine.interrupt().disabled());
-			
+
 			Lib.assertTrue(this.threadWithResource == null);
 			ThreadState threadState = getThreadState(thread);
-			//Lib.assertTrue(threadState.compareTo(this.pickNextThread()) == 1);
 			this.threadWithResource = threadState;
 			threadState.acquire(this);
 		}
@@ -174,15 +175,15 @@ public class PriorityScheduler extends Scheduler {
 				ThreadState previousThreadWithResource = threadWithResource;
 				threadWithResource = null;
 				previousThreadWithResource.resourceQueues.remove(this);
-			//	previousThreadWithResource.updateEffectivePriority();
+				//	previousThreadWithResource.updateEffectivePriority();
 			}
-			
+
 			if (waitQueue.isEmpty())
 				return null;
 			ArrayList<ThreadState> waitingThreads = new ArrayList<ThreadState>();
 			for (ThreadState threadState : waitQueue){
 				waitingThreads.add(threadState);
-		//		threadState.updateEffectivePriority();
+				//		threadState.updateEffectivePriority();
 			}
 			for (ThreadState threadState : waitingThreads){
 				waitQueue.remove(threadState);
@@ -215,7 +216,7 @@ public class PriorityScheduler extends Scheduler {
 				threadState.updateEffectivePriority();
 				waitQueue.add(threadState);
 			}
-		
+
 			ThreadState nextThreadState = waitQueue.peek();
 			return nextThreadState;		
 		}
@@ -229,7 +230,7 @@ public class PriorityScheduler extends Scheduler {
 			}
 			// implement me (if you want)
 		}
-		
+
 		public boolean add(ThreadState threadState){
 			return this.waitQueue.add(threadState);
 		}
@@ -243,7 +244,7 @@ public class PriorityScheduler extends Scheduler {
 		 * threads to the owning thread.
 		 */
 		public boolean transferPriority;
-		
+
 		private java.util.PriorityQueue<ThreadState> waitQueue = new java.util.PriorityQueue<ThreadState>();
 		private ThreadState threadWithResource = null;
 	}
@@ -333,11 +334,9 @@ public class PriorityScheduler extends Scheduler {
 		 * @see	nachos.threads.ThreadQueue#nextThread
 		 */
 		public void acquire(PriorityQueue waitQueue) {
-			// implement me
 			this.resourceQueues.add(waitQueue);
 		}	
 
-		
 		public long getTimeEnqueued() {
 			return timeEnqueued;
 		}
@@ -349,7 +348,7 @@ public class PriorityScheduler extends Scheduler {
 			// do we even need a list of the donors? (how bout just values)
 			this.donorList.clear();
 			int maxDonorPriority = -1;
-			
+
 			for (PriorityQueue resourceQueue : resourceQueues){
 				for (ThreadState threadState : resourceQueue) {
 					threadState.updateEffectivePriority();
@@ -358,15 +357,15 @@ public class PriorityScheduler extends Scheduler {
 						maxDonorPriority = threadState.getEffectivePriority();
 				}
 			}
-			
+
 			if (this.priority < maxDonorPriority)
 				this.cachedEffectivePriority = maxDonorPriority;
 			else
 				this.cachedEffectivePriority = this.priority;
-			
-			
+
+
 		}
-		
+
 		public int compareTo(ThreadState t){
 			if (this.getEffectivePriority() > t.getEffectivePriority())
 				return -1;
@@ -392,15 +391,15 @@ public class PriorityScheduler extends Scheduler {
 	/*
 	 * 
 	 */
-    public static void selfTest(){
-    	System.out.println("\n Entering PriorityScheduler.selfTest()");
-    	KThread currentThread = KThread.currentThread();
-    	
-    	int threadZeroPriority;
-    	int threadOnePriority;
+	public static void selfTest(){
+		System.out.println("\n Entering PriorityScheduler.selfTest()");
+		KThread currentThread = KThread.currentThread();
 
-    	
-    	System.out.println("\nTesting thread priority (no donation):");
+		int threadZeroPriority;
+		int threadOnePriority;
+
+
+		System.out.println("\nTesting thread priority (no donation):");
 		System.out.println("Thread 0's priority same as  Thread 1");
 		KThread newThread = new KThread(new PingTest(1));
 		Machine.interrupt().disable();
@@ -413,8 +412,8 @@ public class PriorityScheduler extends Scheduler {
 		newThread.fork();
 		new PingTest(0).run();
 		newThread.join();
-		
-		
+
+
 		System.out.println("\nTesting thread priority (no donation):");
 		System.out.println("Thread 0's priority lower than Thread 1 (calls decreasePriority())");
 		ThreadedKernel.scheduler.decreasePriority();
@@ -430,9 +429,9 @@ public class PriorityScheduler extends Scheduler {
 		new PingTest(0).run();
 		newThread.join();
 		ThreadedKernel.scheduler.increasePriority(); // reset them to equal priority
-		
-		
-		
+
+
+
 		System.out.println("\nTesting thread priority (no donation):");
 		System.out.println("Thread 0's priority higher than Thread 1 (calls increasePriority())");
 		ThreadedKernel.scheduler.increasePriority();
@@ -448,9 +447,9 @@ public class PriorityScheduler extends Scheduler {
 		new PingTest(0).run();
 		newThread.join();
 		ThreadedKernel.scheduler.decreasePriority(); // reset them to equal priorities
-		
-		
-		
+
+
+
 		System.out.println("\nTesting thread priority donation with joins:");
 		System.out.println("Thread 0's priority higher than Thread 1");
 		System.out.println("but Thread 0 calls join on Thread 1");
@@ -497,17 +496,102 @@ public class PriorityScheduler extends Scheduler {
 		System.out.println("After call to join: Thread 0's effecive priority: " + threadZeroPriority);
 		System.out.println("\t\tThread 1's effective priority: " + threadOnePriority);
 		ThreadedKernel.scheduler.increasePriority(); // reset them to equal priorities
-		
-		
-		
-		System.out.println("\nTesting thread priority donation with locks:");
-		System.out.println("Thread 0's priority lower than Thread 1");
+
+
+
+		System.out.println("\nTesting transitive thread priority donation with joins:");
+		System.out.println("Thread 0's priority higher than Thread 1 which is higher than Thread 2 ");
 		System.out.println("but Thread 0 has lock and Thread 1 waiting for lock");
+		newThread = new KThread(new JoinTest(1));
+		newThread.fork();
+		ThreadedKernel.scheduler.increasePriority();
+		ThreadedKernel.scheduler.increasePriority();	
+		ThreadedKernel.scheduler.increasePriority();	
+		ThreadedKernel.scheduler.increasePriority();	
+		ThreadedKernel.scheduler.increasePriority();	
+		Machine.interrupt().disable();
+		threadZeroPriority = ThreadedKernel.scheduler.getEffectivePriority(KThread.currentThread());
+		Machine.interrupt().enable();
+		System.out.println("Before call to join: Thread 0's effective priority: " + threadZeroPriority);
+		newThread.join();
+		ThreadedKernel.scheduler.decreasePriority();
+		ThreadedKernel.scheduler.decreasePriority();	
+		ThreadedKernel.scheduler.decreasePriority();	
+		ThreadedKernel.scheduler.decreasePriority();	
+		ThreadedKernel.scheduler.decreasePriority();
+		
+		
+		System.out.println("\n\nNow with locks");
 		Lock lock = new Lock();
+		newThread = new KThread(new LockTest(1, lock, null));
+		newThread.fork();
+		newThread.join();
+		
+		
 
-    }
-    
+	}
 
+	private static class LockTest implements Runnable {
+		LockTest(int which, Lock lock, KThread thread){
+			this.which = which;
+			this.lock = lock;
+			this.thread = thread;
+		}
+		public void run(){
+			if (this.which == 1){
+				lock.acquire();
+				KThread newThread = new KThread(new LockTest(2, lock, KThread.currentThread()));
+				newThread.fork();
+				Machine.interrupt().disable();
+				int threadZeroPriority = ThreadedKernel.scheduler.getEffectivePriority(KThread.currentThread());
+				Machine.interrupt().enable();
+				System.out.println("After Thread1 acquires lock: Thread 1's effecive priority: " + threadZeroPriority);
+				Machine.interrupt().disable();
+
+				KThread.sleep();
+				 threadZeroPriority = ThreadedKernel.scheduler.getEffectivePriority(KThread.currentThread());
+					System.out.println("When Thread2 is waiting for lock: Thread 1's effecive priority: " + threadZeroPriority);
+				Machine.interrupt().enable();
+
+			} else if (this.which == 2){
+				ThreadedKernel.scheduler.increasePriority();
+				Machine.interrupt().disable();
+				this.thread.ready();
+				lock.acquire();
+				Machine.interrupt().enable();
+			
+				
+			}
+		}
+		private KThread thread;
+		private int which;
+		private Lock lock;
+	}
+	private static class JoinTest implements Runnable {
+		JoinTest(int which){
+			this.which = which;
+		}
+		public void run() {
+			if (this.which == 1){
+				KThread newThread = new KThread(new JoinTest(2));
+				ThreadedKernel.scheduler.increasePriority();
+				newThread.fork();	
+				Machine.interrupt().disable();
+				int threadZeroPriority = ThreadedKernel.scheduler.getEffectivePriority(KThread.currentThread());
+				Machine.interrupt().enable();
+				System.out.println("After Thread 0's join call: Thread 1's effecive priority: " + threadZeroPriority);
+			
+				newThread.join();
+			} else {
+				Machine.interrupt().disable();
+				int threadZeroPriority = ThreadedKernel.scheduler.getEffectivePriority(KThread.currentThread());
+				Machine.interrupt().enable();
+				System.out.println("After Thread 1's join call: Thread 2's effecive priority: " + threadZeroPriority);
+			}
+			
+		}
+		private int which;
+	}
 	private static class PingTest implements Runnable {
 		PingTest(int which) {
 			this.which = which;
@@ -523,6 +607,6 @@ public class PriorityScheduler extends Scheduler {
 
 		private int which;
 	}
-	
-	
+
+
 }
