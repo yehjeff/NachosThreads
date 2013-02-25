@@ -296,8 +296,8 @@ public class KThread {
 			Machine.interrupt().restore(intStatus);
 			return;
 		} else {
-			joiner.waitForAccess(currentThread);
 			joiner.acquire(this);
+			joiner.waitForAccess(currentThread);
 			currentThread.sleep();
 			Machine.interrupt().restore(intStatus);
 		}

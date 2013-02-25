@@ -1,6 +1,7 @@
 package nachos.threads;
 
 import nachos.machine.*;
+
 import java.util.*;
 
 /**
@@ -39,7 +40,11 @@ public class Condition2 {
 		waitQueue.add(KThread.currentThread());
 		Machine.interrupt().disable();
 		conditionLock.release();
+		System.out.println("Thread " + KThread.currentThread().getName() + " is sleeping");
+		numThreadsInQueue++; //TESTING STUFF
+        System.out.println("There are " + numThreadsInQueue + " threads in the wait queue");
 		KThread.currentThread().sleep();
+        System.out.println("Thread " + KThread.currentThread().getName() + " has woken up");
 		conditionLock.acquire();
 		Machine.interrupt().enable();
 	}
@@ -52,7 +57,11 @@ public class Condition2 {
 		Lib.assertTrue(conditionLock.isHeldByCurrentThread());
 		if (waitQueue.peek() != null) {
 	        KThread threadToSignal = waitQueue.poll();
+	        numThreadsInQueue--; //TESTING STUFF
+	        System.out.println("There are " + numThreadsInQueue + " threads in the wait queue");
+	        boolean intStatus = Machine.interrupt().disable();
 	        threadToSignal.ready();
+	        Machine.interrupt().restore(intStatus);
 		}
 	}
 
@@ -74,4 +83,65 @@ public class Condition2 {
 
 	private Lock conditionLock;
 	private Queue<KThread> waitQueue;
+	private int numThreadsInQueue;
+	
+
+	/**
+	 * TESTING STUFF
+	 */
+	private static class PingTest implements Runnable {
+		PingTest(int which, Condition2 cond, Lock lock) {
+			this.which = which;
+			this.cond = cond;
+			this.lock = lock;
+		}
+
+		public void run() {
+			lock.acquire();
+			
+			if (this.which < 3) {
+			System.out.println("*** thread " + which + " said sup");
+			numWaiting++;
+			cond.sleep();
+			
+			System.out.println("BOOM");
+			} else {
+				System.out.println("thread 1");
+
+				while (numWaiting > 0){
+					System.out.println("in while");
+
+					cond.wake();
+					numWaiting--;
+				}
+			}
+			lock.release();
+		}
+
+		private int which;
+		private Condition2 cond;
+		private Lock lock;
+		private static int numWaiting = 0;
+	}
+	
+	
+	public static void selfTest() {
+		
+    	System.out.println("Entering Condition2.selfTest()");
+    	
+    	KThread currentThread = KThread.currentThread();
+    	Lock lock = new Lock();
+    	Condition2 conditionVar = new Condition2(lock);
+    	
+    	
+		System.out.println("\n ***Testing sleep and wake***");
+		for (int i = 0; i < 3; i++) {
+			KThread newThread = new KThread(new PingTest(i+1,conditionVar,lock));
+			newThread.setName("" + i);
+			newThread.fork();
+		}
+		new PingTest(0,conditionVar, lock).run();
+		
+		
+	}
 }
