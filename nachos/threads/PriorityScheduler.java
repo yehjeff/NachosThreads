@@ -175,7 +175,7 @@ public class PriorityScheduler extends Scheduler {
 				ThreadState previousThreadWithResource = threadWithResource;
 				threadWithResource = null;
 				previousThreadWithResource.resourceQueues.remove(this);
-				//	previousThreadWithResource.updateEffectivePriority();
+					previousThreadWithResource.updateEffectivePriority();
 			}
 
 			if (waitQueue.isEmpty())
@@ -183,7 +183,7 @@ public class PriorityScheduler extends Scheduler {
 			ArrayList<ThreadState> waitingThreads = new ArrayList<ThreadState>();
 			for (ThreadState threadState : waitQueue){
 				waitingThreads.add(threadState);
-				//		threadState.updateEffectivePriority();
+				//threadState.updateEffectivePriority();
 			}
 			for (ThreadState threadState : waitingThreads){
 				waitQueue.remove(threadState);
@@ -320,6 +320,12 @@ public class PriorityScheduler extends Scheduler {
 		public void waitForAccess(PriorityQueue waitQueue) {
 			// implement me
 			this.setTimeEnqueued(Machine.timer().getTime());
+	//		Lib.assertTrue(waitQueue.threadWithResource != this);
+			if (waitQueue.threadWithResource == this){
+				waitQueue.threadWithResource.resourceQueues.remove(waitQueue);
+				waitQueue.threadWithResource.updateEffectivePriority();
+				waitQueue.threadWithResource = null;
+			}
 			waitQueue.add(this);
 		}
 
@@ -349,8 +355,9 @@ public class PriorityScheduler extends Scheduler {
 			this.donorList.clear();
 			int maxDonorPriority = -1;
 
-			for (PriorityQueue resourceQueue : resourceQueues){
+			for (PriorityQueue resourceQueue : this.resourceQueues){
 				for (ThreadState threadState : resourceQueue) {
+					Lib.assertTrue(threadState != this);
 					threadState.updateEffectivePriority();
 					donorList.add(threadState);
 					if (maxDonorPriority < threadState.getEffectivePriority())
@@ -362,7 +369,6 @@ public class PriorityScheduler extends Scheduler {
 				this.cachedEffectivePriority = maxDonorPriority;
 			else
 				this.cachedEffectivePriority = this.priority;
-
 
 		}
 
