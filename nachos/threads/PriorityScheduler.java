@@ -53,8 +53,8 @@ public class PriorityScheduler extends Scheduler {
 	public PriorityScheduler() {
 	}
 
-	
-	
+
+
 	/**
 	 * Allocate a new priority thread queue.
 	 *
@@ -175,7 +175,7 @@ public class PriorityScheduler extends Scheduler {
 				ThreadState previousThreadWithResource = threadWithResource;
 				threadWithResource = null;
 				previousThreadWithResource.resourceQueues.remove(this);
-					previousThreadWithResource.updateEffectivePriority();
+				previousThreadWithResource.updateEffectivePriority();
 			}
 
 			if (waitQueue.isEmpty())
@@ -320,7 +320,7 @@ public class PriorityScheduler extends Scheduler {
 		public void waitForAccess(PriorityQueue waitQueue) {
 			// implement me
 			this.setTimeEnqueued(Machine.timer().getTime());
-	//		Lib.assertTrue(waitQueue.threadWithResource != this);
+			//		Lib.assertTrue(waitQueue.threadWithResource != this);
 			if (waitQueue.threadWithResource == this){
 				waitQueue.threadWithResource.resourceQueues.remove(waitQueue);
 				waitQueue.threadWithResource.updateEffectivePriority();
@@ -356,14 +356,17 @@ public class PriorityScheduler extends Scheduler {
 			int maxDonorPriority = -1;
 
 			for (PriorityQueue resourceQueue : this.resourceQueues){
-				for (ThreadState threadState : resourceQueue) {
-					Lib.assertTrue(threadState != this);
-					threadState.updateEffectivePriority();
-					donorList.add(threadState);
-					if (maxDonorPriority < threadState.getEffectivePriority())
-						maxDonorPriority = threadState.getEffectivePriority();
+				if (resourceQueue.transferPriority) {
+					for (ThreadState threadState : resourceQueue) {
+						Lib.assertTrue(threadState != this);
+						threadState.updateEffectivePriority();
+						donorList.add(threadState);
+						if (maxDonorPriority < threadState.getEffectivePriority())
+							maxDonorPriority = threadState.getEffectivePriority();
+					}
 				}
 			}
+
 
 			if (this.priority < maxDonorPriority)
 				this.cachedEffectivePriority = maxDonorPriority;
@@ -525,15 +528,15 @@ public class PriorityScheduler extends Scheduler {
 		ThreadedKernel.scheduler.decreasePriority();	
 		ThreadedKernel.scheduler.decreasePriority();	
 		ThreadedKernel.scheduler.decreasePriority();
-		
-		
+
+
 		System.out.println("\n\nNow with locks");
 		Lock lock = new Lock();
 		newThread = new KThread(new LockTest(1, lock, null));
 		newThread.fork();
 		newThread.join();
-		
-		
+
+
 
 	}
 
@@ -555,8 +558,8 @@ public class PriorityScheduler extends Scheduler {
 				Machine.interrupt().disable();
 
 				KThread.sleep();
-				 threadZeroPriority = ThreadedKernel.scheduler.getEffectivePriority(KThread.currentThread());
-					System.out.println("When Thread2 is waiting for lock: Thread 1's effecive priority: " + threadZeroPriority);
+				threadZeroPriority = ThreadedKernel.scheduler.getEffectivePriority(KThread.currentThread());
+				System.out.println("When Thread2 is waiting for lock: Thread 1's effecive priority: " + threadZeroPriority);
 				Machine.interrupt().enable();
 
 			} else if (this.which == 2){
@@ -565,8 +568,8 @@ public class PriorityScheduler extends Scheduler {
 				this.thread.ready();
 				lock.acquire();
 				Machine.interrupt().enable();
-			
-				
+
+
 			}
 		}
 		private KThread thread;
@@ -586,7 +589,7 @@ public class PriorityScheduler extends Scheduler {
 				int threadZeroPriority = ThreadedKernel.scheduler.getEffectivePriority(KThread.currentThread());
 				Machine.interrupt().enable();
 				System.out.println("After Thread 0's join call: Thread 1's effecive priority: " + threadZeroPriority);
-			
+
 				newThread.join();
 			} else {
 				Machine.interrupt().disable();
@@ -594,7 +597,7 @@ public class PriorityScheduler extends Scheduler {
 				Machine.interrupt().enable();
 				System.out.println("After Thread 1's join call: Thread 2's effecive priority: " + threadZeroPriority);
 			}
-			
+
 		}
 		private int which;
 	}
