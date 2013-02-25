@@ -56,7 +56,8 @@ public class ThreadedKernel extends Kernel {
 		Condition2.selfTest();
 		Alarm.selfTest();
 		PriorityScheduler.selfTest();
-		//Boat.selfTest();
+		Boat.selfTest();
+		Communicator.selfTest();
 	}
 
 	/**
