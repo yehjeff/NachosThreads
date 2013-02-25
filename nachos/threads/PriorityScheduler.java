@@ -41,6 +41,9 @@ import java.util.Iterator;
  * 		Currently updating effective priortiy when we NEED it to be updated kinda (which is when we want to know the next thread in queue)
  * 			but in the doc they said something like you only need to update it when it oculd have changed (could this suggest we should update it whenever 
  * 			it can changes?)
+ * 				#### changed:
+ * 				#### currently assuming things within the waitingqueue dont change (Cuz they are sleeping). might not be true so...
+ * 				####		we could have references to donees (if our priority changed, then just check donee's with mine to see if they shoudl change too)
  * 
  * might need to make sure none of the resourceQueues is the readyQueue 
  * testing:
