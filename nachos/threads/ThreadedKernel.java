@@ -6,6 +6,7 @@ import nachos.machine.*;
  * A multi-threaded OS kernel.
  */
 public class ThreadedKernel extends Kernel {
+
 	/**
 	 * Allocate a new multi-threaded kernel.
 	 */
@@ -56,7 +57,7 @@ public class ThreadedKernel extends Kernel {
 	//	Alarm.selfTest();
 		Alarm.selfTest();
 		PriorityScheduler.selfTest();
-		//Boat.selfTest();
+		Boat.selfTest();
 	}
 
 	/**

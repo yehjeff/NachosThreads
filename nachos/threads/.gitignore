@@ -35,3 +35,6 @@
 /Condition2$PingTest.class
 /PriorityScheduler$JoinTest.class
 /PriorityScheduler$LockTest.class
+/Alarm$PingTest.class
+/Communicator$ListenerTest.class
+/Communicator$SpeakerTest.class
