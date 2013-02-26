@@ -20,7 +20,7 @@ public class Alarm {
 		Machine.timer().setInterruptHandler(new Runnable() {
 			public void run() { timerInterrupt(); }
 		});
-		this.waitingThreads = new java.util.PriorityQueue<ThreadAndTime>();
+		this.waitingThreads = new java.util.PriorityQueue<ThreadAndTime<KThread,Long>>();
 	}
 
 	/**
@@ -34,9 +34,9 @@ public class Alarm {
 	 * 				error?)
 	 */
 	public void timerInterrupt() {
-		Queue<ThreadAndTime> wakeUpList = new LinkedList<ThreadAndTime>();
+		Queue<ThreadAndTime<KThread,Long>> wakeUpList = new LinkedList<ThreadAndTime<KThread,Long>>();
 		
-		for (ThreadAndTime pair : waitingThreads) {
+		for (ThreadAndTime<KThread,Long> pair : waitingThreads) {
 			if (Machine.timer().getTime() >= pair.getTime()) {
 				((nachos.threads.KThread) pair.getThread()).ready();
 				wakeUpList.add(pair);
@@ -44,7 +44,7 @@ public class Alarm {
 						+ " was woken up at " + Machine.timer().getTime());
 			}
 		}
-		for (ThreadAndTime pair : wakeUpList) {
+		for (ThreadAndTime<KThread,Long> pair : wakeUpList) {
 			waitingThreads.remove(pair);
 		}
 		wakeUpList.clear();
@@ -74,9 +74,9 @@ public class Alarm {
 				+ " was added to the queue at " + Machine.timer().getTime());
 		System.out.println("Thread " + KThread.currentThread().getName() 
 				+ " will wait for " + x + " seconds");
-		waitingThreads.add(new ThreadAndTime(KThread.currentThread(), wakeTime));
+		waitingThreads.add(new ThreadAndTime<KThread,Long>(KThread.currentThread(), wakeTime));
 		boolean intStatus = Machine.interrupt().disable();
-		KThread.currentThread().sleep();
+		KThread.sleep();
 		Machine.interrupt().restore(intStatus);
 	}
 
@@ -84,7 +84,7 @@ public class Alarm {
 	/**
 	 * PUT COMMENTS HERE
 	 */
-	private class ThreadAndTime<KThread,Long>  {
+	private class ThreadAndTime<KThread,Long> implements Comparable<ThreadAndTime<KThread,Long>> {
 		public KThread thread;
 		public long time;
 
@@ -111,7 +111,7 @@ public class Alarm {
 	/**
 	 * waitingThreads: a queue of KThreads to keep track of the threads waiting on the condition
 	 */
-	private java.util.PriorityQueue<ThreadAndTime> waitingThreads;
+	private java.util.PriorityQueue<ThreadAndTime<KThread,Long>> waitingThreads;
 	
 	
 	/**

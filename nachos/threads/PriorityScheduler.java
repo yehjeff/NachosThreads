@@ -240,6 +240,7 @@ public class PriorityScheduler extends Scheduler {
 
 		private java.util.PriorityQueue<ThreadState> waitQueue = new java.util.PriorityQueue<ThreadState>();
 		private ThreadState threadWithResource = null;
+		private long age = 0;
 	}
 
 	/**
@@ -320,7 +321,7 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		public void waitForAccess(PriorityQueue waitQueue) {
 			// implement me
-			this.setTimeEnqueued(Machine.timer().getTime());
+			this.setTimeEnqueued(waitQueue.age++);
 			if (waitQueue.threadWithResource == this){
 				waitQueue.threadWithResource.resourceQueues.remove(waitQueue);
 				waitQueue.threadWithResource.updateEffectivePriority();
@@ -352,8 +353,8 @@ public class PriorityScheduler extends Scheduler {
 		public void acquire(PriorityQueue waitQueue) {
 			this.resourceQueues.add(waitQueue);
 			waitQueue.threadWithResource = this;
-			if (this.doneeList.contains(waitQueue))
-				this.doneeList.remove(waitQueue);
+	//		if (this.doneeList.contains(waitQueue))		//NOT SURE IF NECESSARY
+	//			this.doneeList.remove(waitQueue);		//NOT SURE IF NECESSARY, MAKES NO SENSE
 			this.updateEffectivePriority();
 		}	
 		/*
@@ -637,6 +638,11 @@ public class PriorityScheduler extends Scheduler {
 		}
 
 		public void run() {
+			Machine.interrupt().disable();
+			int threadZeroPriority = ThreadedKernel.scheduler.getEffectivePriority(KThread.currentThread());
+			int threadOnePriority = ThreadedKernel.scheduler.getEffectivePriority(KThread.currentThread());
+			Machine.interrupt().enable();
+			System.out.println("After call to join: Thread 1's effecive priority: " + threadZeroPriority);
 			for (int i=0; i<5; i++) {
 				System.out.println("*** thread " + which + " looped "
 						+ i + " times");
