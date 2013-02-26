@@ -40,8 +40,6 @@ public class Alarm {
 			if (Machine.timer().getTime() >= pair.getTime()) {
 				((nachos.threads.KThread) pair.getThread()).ready();
 				wakeUpList.add(pair);
-				System.out.println("Thread " + ((nachos.threads.KThread) pair.getThread()).getName() 
-						+ " was woken up at " + Machine.timer().getTime());
 			}
 		}
 		for (ThreadAndTime pair : wakeUpList) {
@@ -70,10 +68,6 @@ public class Alarm {
 		// while (wakeTime > Machine.timer().getTime())
 		// KThread.yield();
 		long wakeTime = Machine.timer().getTime() + x;
-		System.out.println("Thread " + KThread.currentThread().getName() 
-				+ " was added to the queue at " + Machine.timer().getTime());
-		System.out.println("Thread " + KThread.currentThread().getName() 
-				+ " will wait for " + x + " seconds");
 		waitingThreads.add(new ThreadAndTime(KThread.currentThread(), wakeTime));
 		boolean intStatus = Machine.interrupt().disable();
 		KThread.currentThread().sleep();
