@@ -14,6 +14,7 @@ public class Boat
 	static Condition isFinished;
 	static Condition isBoatOahu;
 	static Condition isBoatMolo;
+	static Condition isDone;
 	static Lock lock;
 	static Alarm alarm;
 	static int OAHU = 1;
@@ -23,26 +24,34 @@ public class Boat
 	{
 		BoatGrader b = new BoatGrader();
 		//base case
+		/*
 		System.out.println("\n ***Testing Boats with only 2 children***");
 		begin(0, 2, b);
+		
 		//add one child to base case
 		System.out.println("\n ***Testing Boats with 3 children***");
 		begin(0, 3, b);
+		
 		//add one adult to base case
 		System.out.println("\n ***Testing Boats with 2 children, 1 adult***");
 		begin(1, 2, b);
+		
 		//add one of each to base case
 		System.out.println("\n ***Testing Boats with 3 children, 1 adult***");
 		begin(1, 3, b);
+		
 		//add multiple children to base case
 		System.out.println("\n ***Testing Boats with 13 children***");
 		begin(0, 13, b);
+		
 		//add multiple adults to base case
 		System.out.println("\n ***Testing Boats with 2 children, 13 adults***");
 		begin(13, 2, b);
+		*/
 		//add multiple of each to base case
 		System.out.println("\n ***Testing Boats with 13 children, 13 adults***");
 		begin(13, 13, b);
+		
 	}
 
 	public static void begin( int adults, int children, BoatGrader b )
@@ -66,6 +75,7 @@ public class Boat
 		isFinished = new Condition(lock);
 		isBoatMolo = new Condition(lock);
 		isBoatOahu = new Condition(lock);
+		isDone = new Condition(lock); //just another condition for the adults to permanently wait on
 		
 		// Create threads here. See section 3.4 of the Nachos for Java
 		// Walkthrough linked from the projects page.
@@ -95,27 +105,28 @@ public class Boat
 		//adult thread creation
 		for(int i=adults;i>0;i--) {
 			KThread adThread = new KThread(ad);
-			adThread.setName("Adult Thread #"+i);
+			adThread.setName("Adult-Thread #"+i);
 			//System.out.println("\n --Creating Adult Thread #"+i);
 			adThread.fork();
 		};
 		//child thread creation
 		for(int j=children;j>0;j--) {
 			KThread chThread = new KThread(ch);
-			chThread.setName("Child Thread #"+j);
+			chThread.setName("Child-Thread #"+j);
 			//System.out.println("\n --Creating Child Thread #"+j);
 			chThread.fork();
 		};
 		
-		//Jeffnote:does this work for thread creation? I'm not overriding them right?
-		
+		lock.acquire(); //what did the gsi say about these lock acquire/releases?
 		while (numAdultMolo + numChildMolo  != adults + children) {
-			lock.acquire();
+			//lock.acquire();
 			isFinished.sleep();
-			lock.release();
+			System.out.println("\n AAAAAAAAAAAA");
+			//lock.release();
+			System.out.println("\n BBBBBBBBBBBB");
 		}
 		
-		//System.out.println("\n Boat.begin() finishing!");
+		System.out.println("\n Boat.begin() finishing!");
 		return;
 	}
 
@@ -129,13 +140,11 @@ public class Boat
 		 */
 		//Adult Thread Startup
 		numAdultOahu++;
-		int whereAmI = OAHU;
+		//int whereAmI = OAHU;
 		lock.acquire();
 		//confirm if safe to row
-		while (boatLocation != OAHU || numChildMolo == 0) {
-			if (numChildOnBoat == 1) {
-				isBoatOahu.wake();
-			}
+		while (boatLocation != OAHU || numChildMolo == 0 || numChildOnBoat == 1) {
+			isBoatOahu.wake();
 			isBoatOahu.sleep();
 		}
 		//passed while loop, safe to row to Molokai and perma-sleep
@@ -143,11 +152,12 @@ public class Boat
 		numAdultOahu--;
 		numAdultMolo++;
 		boatLocation = MOLOKAI;
-		whereAmI = MOLOKAI;
+		//whereAmI = MOLOKAI;
 		//wake up a child to row back
 		isBoatMolo.wake();
-		lock.release();
-		KThread.sleep();
+		//lock.release();
+		System.out.println("\n Time2PermaSleep");
+		isDone.sleep();
 	}
 
 	
@@ -166,14 +176,17 @@ public class Boat
 					OahuSupposedlyEmpty = false; 
 					System.out.println("The Islanders Believe They Are Done");
 					isFinished.wake(); //notify begin()
-					alarm.waitUntil((long)1.0); //Jeffnote:what to do here? How long2sleep? Maybe like 1.0?
+					System.out.println("\n Notified isFinished()");
+					alarm.waitUntil((long) 100.0);
 					System.out.println("Well they were wrong, there are "+(numChildOahu+numAdultOahu)+" people left on Oahu");
+					//isBoatMolo.sleep();
 				} else {
 					bg.ChildRowToOahu();
 					numChildMolo--;
 					numChildOahu++;
 					boatLocation = OAHU;
 					whereAmI = OAHU;
+					System.out.println("Upon arrival there will be "+numChildOahu+" kids, "+numAdultOahu+" adults on Oahu");
 					//only wake and sleep if island not empty
 					if (numChildOahu > 1 || numAdultOahu > 0) { //if still more people on Oahu
 						isBoatOahu.wake();
@@ -191,10 +204,11 @@ public class Boat
 					numChildOahu--;
 					numChildMolo++;
 					whereAmI = MOLOKAI;
-					//check if there is another child to wake to be rider
-					if (numChildOahu==1) { //if child alone on Oahu (last child checking and empty)
+					//check if there is another child to wake to be rider			
+					if (numChildOahu==0) { //if child alone on Oahu (last child checking and empty)
 						boatLocation = MOLOKAI;
 						OahuSupposedlyEmpty = true;
+						//System.out.println("\nOahuKids:"+numChildOahu);
 					} else { //child not alone, there is at least 2 children on island (prev. rower is asleep)
 						isBoatOahu.wake(); //wake child to ride
 						isBoatMolo.sleep();	//let rider deal with Molo and rowing back
@@ -208,6 +222,7 @@ public class Boat
 					//check if island is empty
 					if (numChildOahu == 0 && numAdultOahu == 0) {
 						OahuSupposedlyEmpty = true;
+						//System.out.println("rider thinks he is last");
 					}
 					//rider doesn't need to sleep or wake anyone on Molo, outer while-loop will happen again
 				}
