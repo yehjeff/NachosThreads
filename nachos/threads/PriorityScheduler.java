@@ -172,12 +172,13 @@ public class PriorityScheduler extends Scheduler {
 			ThreadState threadState = getThreadState(thread);
 			threadState.acquire(this);
 		}
-		// 
+		/*
+		 * When asking for next thread, old resource holder needs to relinquish resource and recalculate its effective priority
+		 * 
+		 */
 		public KThread nextThread() {
 			Lib.assertTrue(Machine.interrupt().disabled());
-			// implement me
-			
-			
+
 			if (threadWithResource != null) {
 				ThreadState previousThreadWithResource = threadWithResource;
 				threadWithResource = null;
@@ -187,7 +188,7 @@ public class PriorityScheduler extends Scheduler {
 
 			if (waitQueue.isEmpty())
 				return null;
-			
+
 			threadWithResource = waitQueue.poll();
 			threadWithResource.acquire(this);
 			return threadWithResource.thread;
@@ -201,13 +202,12 @@ public class PriorityScheduler extends Scheduler {
 		 *		return..
 		 */
 		protected ThreadState pickNextThread() {
-			// implement me
 			if (waitQueue.isEmpty())
 				return null;
 			return waitQueue.peek();
-			
-			
-			
+
+
+
 		}
 
 		public void print() {
@@ -217,12 +217,16 @@ public class PriorityScheduler extends Scheduler {
 			for (ThreadState threadState : this.waitQueue){
 				System.out.println(threadState.getPriority() + " " + threadState.getEffectivePriority() + " " + threadState.getTimeEnqueued());
 			}
-			// implement me (if you want)
 		}
-
+		/*
+		 * Added this method because I wasn't sure if PriorityQueue's waitQueue was accessable directly
+		 */
 		public boolean add(ThreadState threadState){
 			return this.waitQueue.add(threadState);
 		}
+		/*
+		 * Made this so I can iterator through the PriorityQueue's waitQueue (didnt know i could access it directly, but what evs)
+		 */
 		public Iterator<ThreadState> iterator(){
 			return this.waitQueue.iterator();
 		}
@@ -273,8 +277,6 @@ public class PriorityScheduler extends Scheduler {
 		 * @return	the effective priority of the associated thread.
 		 */
 		public int getEffectivePriority() {
-			// implement me
-			//this.updateEffectivePriority();
 			return cachedEffectivePriority;
 		}
 
@@ -282,24 +284,21 @@ public class PriorityScheduler extends Scheduler {
 		 * Set the priority of the associated thread to the specified value.
 		 *
 		 * @param	priority	the new priority.
-		 *///own priority, effective priority of donor, transitive
+		 */
+		/*
+		 * When changing the priority of a thread, those that it is donating to must update their priorities
+		 */
 		public void setPriority(int priority) {
 			if (this.priority == priority)
 				return;
-		//	int previousPriority = this.priority;
 			this.priority = priority;
-		//	if (this.priority > this.cachedEffectivePriority || previousPriority == this.cachedEffectivePriority) just update it bro
 			this.updateEffectivePriority();
 			for (ThreadState doneeThread : this.doneeList){
 				if (doneeThread.getEffectivePriority() < this.getEffectivePriority()){
 					doneeThread.updateEffectivePriority();
 				}
 			}
-			
-			
-			//sadfdfadsSADF
 
-			// implement me
 		}
 
 		/**
@@ -314,6 +313,11 @@ public class PriorityScheduler extends Scheduler {
 		 *
 		 * @see	nachos.threads.ThreadQueue#waitForAccess
 		 */
+		/*
+		 * When waiting for a resource, must donate to whoever holds the resource.
+		 * Also, if for some reason the one trying to wait for the resource already has the resource but calls waitForAccess anyway,
+		 * make sure it relinquishes the resources 
+		 */
 		public void waitForAccess(PriorityQueue waitQueue) {
 			// implement me
 			this.setTimeEnqueued(Machine.timer().getTime());
@@ -324,9 +328,9 @@ public class PriorityScheduler extends Scheduler {
 			}
 			if (waitQueue.threadWithResource != null) {
 				if (waitQueue.threadWithResource.getEffectivePriority() < this.getEffectivePriority())
-	//				waitQueue.threadWithResource.cachedEffectivePriority = this.getEffectivePriority();
+					//				waitQueue.threadWithResource.cachedEffectivePriority = this.getEffectivePriority();
 					waitQueue.threadWithResource.updateEffectivePriority();		// JUST IN CASE, actually yea kinda need it
-					this.doneeList.add(waitQueue.threadWithResource);
+				this.doneeList.add(waitQueue.threadWithResource);
 			}
 			waitQueue.add(this);
 		}
@@ -341,6 +345,10 @@ public class PriorityScheduler extends Scheduler {
 		 * @see	nachos.threads.ThreadQueue#acquire
 		 * @see	nachos.threads.ThreadQueue#nextThread
 		 */
+		/*
+		 * Called whenever a thread gains access to a resource.
+		 * It gets a new set of potential donors, so need to update its effective priority
+		 */
 		public void acquire(PriorityQueue waitQueue) {
 			this.resourceQueues.add(waitQueue);
 			waitQueue.threadWithResource = this;
@@ -348,23 +356,32 @@ public class PriorityScheduler extends Scheduler {
 				this.doneeList.remove(waitQueue);
 			this.updateEffectivePriority();
 		}	
-
+		/*
+		 * Returns the time when thread called waitForAccess to begin waiting for a resource
+		 */
 		public long getTimeEnqueued() {
 			return timeEnqueued;
 		}
-
+		/*
+		 * Sets the time when thread called waitForAccess to begin waiting for a resource
+		 */
 		public void setTimeEnqueued(long timeEnqueued){
 			this.timeEnqueued = timeEnqueued;
 		}
+		/*
+		 * Thread takes the max of hte effective priorities of all of the threads waiting for the resource that itself has,
+		 * and sets its own effective priority as that value or its own priority, whichever is greater
+		 * 
+		 * Also, since its effective priority changes, whoever is receiving donations from it might need to change its effective priority
+		 */
 		public void updateEffectivePriority(){
 			// do we even need a list of the donors? (how bout just values)
 			int maxDonorPriority = -1;
-			
+
 			for (PriorityQueue resourceQueue : this.resourceQueues){
 				if (resourceQueue.transferPriority) {
 					for (ThreadState threadState : resourceQueue) {
 						Lib.assertTrue(threadState != this);
-				//		threadState.updateEffectivePriority();    not sure if necessary (assuming they are always up to date)
 						if (maxDonorPriority < threadState.getEffectivePriority())
 							maxDonorPriority = threadState.getEffectivePriority();
 					}
@@ -374,7 +391,7 @@ public class PriorityScheduler extends Scheduler {
 
 			if (this.priority < maxDonorPriority) 
 				this.cachedEffectivePriority = maxDonorPriority;
-				
+
 			else 
 				this.cachedEffectivePriority = this.priority;		
 
@@ -385,6 +402,9 @@ public class PriorityScheduler extends Scheduler {
 			}
 		}
 
+		/*
+		 * Used by the PriorityQueue to order the ThreadStates 
+		 */
 		public int compareTo(ThreadState t){
 			if (this.getEffectivePriority() > t.getEffectivePriority())
 				return -1;
@@ -401,7 +421,7 @@ public class PriorityScheduler extends Scheduler {
 		protected KThread thread;
 		/** The priority of the associated thread. */
 		protected int priority;
-		
+
 		private LinkedList<ThreadState> doneeList = new LinkedList<ThreadState>();
 		private LinkedList<PriorityQueue> resourceQueues = new LinkedList<PriorityQueue>();
 		private long timeEnqueued;
