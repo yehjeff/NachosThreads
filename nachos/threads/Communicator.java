@@ -39,27 +39,28 @@ public class Communicator {
     
     // Version 1
     public void speak(int word) {
-    	System.out.println("\nStarting " + KThread.currentThread().getName());
+    	//System.out.println("\nStarting " + KThread.currentThread().getName());
     	communicatorLock.acquire();
     	speakerNotSentCount++;
     	while (listenerNotPairedCount == 0 || speakerHasConfirmed) { // a 2nd speaker can screw over the first speaker, how to prevent?
     		//if (listenerConfirmation) break;
-    		System.out.println("\n" + KThread.currentThread().getName() + " wakes up in while loop");
+    		//System.out.println("\n" + KThread.currentThread().getName() + " wakes up in while loop");
     		speakerWaiting.sleep();
     	}
-    	System.out.println("Current running speaker that will set the word is " + KThread.currentThread().getName());
+    	//System.out.println("Current running speaker that will set the word is " + KThread.currentThread().getName());
     	speakerHasConfirmed = true;
     	listenerWaiting.wake();
     	listenerNotPairedCount--;
     	wordToSend = word;
     	//speakerNotConfirmed = true;// moved to listener to correctly set 1st confirmed speaker
-    	System.out.println("Setting the word to: " + wordToSend);
+    	//System.out.println("Setting the word to: " + wordToSend);
     	speakerConfirmed.sleep();
-    	System.out.println("Speaker waking 2nd time");
+    	//System.out.println("Speaker waking 2nd time");
     	speakerHasConfirmed = false; //when we hand over to the next speaker why set speakerNotConfirmed to false, just leave it
     	if (speakerNotSentCount > 0)
     		speakerWaiting.wake();
     	communicatorLock.release();
+    //	System.out.println("returning from speaker");
     }
 
     /**
@@ -69,12 +70,12 @@ public class Communicator {
      * @return	the integer transferred.
      */    
     public int listen() {
-    	System.out.println("\n" + KThread.currentThread().getName() + " is waking up");
+    	//System.out.println("\n" + KThread.currentThread().getName() + " is waking up");
     	communicatorLock.acquire();
     	listenerNotPairedCount++;
     	if (speakerNotSentCount > 0 && !speakerHasConfirmed && listenerConfirmation == false) {
     		//speakerNotConfirmed = true; // moved here from speak()
-    		System.out.println("waking up a speaker");
+    		//System.out.println("waking up a speaker");
     		speakerWaiting.wake();
     		speakerNotSentCount--;
     		listenerConfirmation = true; // we don't want a 2nd listener waking up a 2nd speaker.
@@ -85,10 +86,11 @@ public class Communicator {
     	
     	
     	listenerWaiting.sleep();
-    	System.out.println("\nThe word to send is: " + wordToSend + "\n");
+    	//System.out.println("\nThe word to send is: " + wordToSend + "\n");
     	int temp = wordToSend; 	
     	speakerConfirmed.wake();
     	communicatorLock.release();
+    	//System.out.println("returning from listener");
     	return temp;
     }
     
@@ -135,17 +137,16 @@ public class Communicator {
 		 */
 		
 		/*
-		SpeakerTest speaker1 = new SpeakerTest(10, com);
-		KThread firstSpeaker = new KThread(speaker1); // word == 1
-		firstSpeaker.setName("speaker1");
-		firstSpeaker.fork(); 
-		
-		
 		KThread firstListener = new KThread(new ListenerTest(com));
 		firstListener.setName("listener1");
 		firstListener.fork();
 		
 		
+		SpeakerTest speaker1 = new SpeakerTest(10, com);
+		KThread firstSpeaker = new KThread(speaker1); // word == 1
+		firstSpeaker.setName("speaker1");
+		firstSpeaker.fork(); 
+	
 		
 		firstSpeaker.join();// start execution of speaker1
 	//	speaker1.run(); // runs speaker 1, who should go straight to sleep
@@ -153,8 +154,8 @@ public class Communicator {
 		System.out.println("\nThe set word is: " + com.wordToSend);
 		System.out.println("\nSingle Listener-Speaker test complete.");
 		
-		*/
 		
+		*/
 		
 		/**
 		 * Test 2: 2 speakers, 2 listeners
@@ -163,7 +164,7 @@ public class Communicator {
 		// 2a) S1 S2 L1 L2
 		// Note: is passed by version 1
 		
-		/*
+		
 		
 		SpeakerTest speaker1 = new SpeakerTest(5, com);
 		KThread firstSpeaker = new KThread(speaker1); // word == 5
@@ -183,7 +184,7 @@ public class Communicator {
 		KThread Listener2 = new KThread(new ListenerTest(com));
 		Listener2.setName("listener2");
 		Listener2.fork();
-		*/
+		
 		
 		// 2b L1 L2 S1 S2  
 		// Passed by version 1
@@ -254,13 +255,13 @@ public class Communicator {
 		KThread Speaker2 = new KThread(speaker2); // word == 10
 		Speaker2.setName("speaker2");
 		Speaker2.fork(); 
-		
 		*/
+		
 		
 		// Test 2e) L1 S1 S2 L2
 		// Passed by version 1
 				
-				
+			/*	
 		KThread firstListener = new KThread(new ListenerTest(com));
 		firstListener.setName("listener1");
 		firstListener.fork();
@@ -279,8 +280,8 @@ public class Communicator {
 		KThread Listener2 = new KThread(new ListenerTest(com));
 		Listener2.setName("listener2");
 		Listener2.fork();
-				
-							
+			*/	
+						
 		Speaker2.join();// join with the last thread to run
 
 		System.out.println("\nThe set word is: " + com.wordToSend);
