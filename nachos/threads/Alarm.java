@@ -20,7 +20,7 @@ public class Alarm {
 		Machine.timer().setInterruptHandler(new Runnable() {
 			public void run() { timerInterrupt(); }
 		});
-		this.waitingThreads = new LinkedList<ThreadAndTime>();
+		this.waitingThreads = new java.util.PriorityQueue<ThreadAndTime>();
 	}
 
 	/**
@@ -84,7 +84,7 @@ public class Alarm {
 	/**
 	 * PUT COMMENTS HERE
 	 */
-	private class ThreadAndTime<KThread,Long> {
+	private class ThreadAndTime<KThread,Long>  {
 		public KThread thread;
 		public long time;
 
@@ -98,12 +98,20 @@ public class Alarm {
 		public long getTime() {
 			return time;
 		}
+		public int compareTo(ThreadAndTime<KThread,Long> threadAndTime){
+			if (this.getTime() > threadAndTime.getTime())
+				return 1;
+			else if (this.getTime() < threadAndTime.getTime())
+				return -1;
+			else
+				return 0;
+		}
 	}
 
 	/**
 	 * waitingThreads: a queue of KThreads to keep track of the threads waiting on the condition
 	 */
-	private Queue<ThreadAndTime> waitingThreads;
+	private java.util.PriorityQueue<ThreadAndTime> waitingThreads;
 	
 	
 	/**
