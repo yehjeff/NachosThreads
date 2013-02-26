@@ -40,9 +40,6 @@ public class Condition2 {
 		waitQueue.add(KThread.currentThread());
 		Machine.interrupt().disable();
 		conditionLock.release();
-		System.out.println("Thread " + KThread.currentThread().getName() + " is sleeping");
-		numThreadsInQueue++; //TESTING STUFF
-		System.out.println("There are " + numThreadsInQueue + " threads in the wait queue");
 		KThread.currentThread().sleep();
 		conditionLock.acquire();
 		Machine.interrupt().enable();
@@ -56,9 +53,6 @@ public class Condition2 {
 		Lib.assertTrue(conditionLock.isHeldByCurrentThread());
 		if (waitQueue.peek() != null) {
 			KThread threadToSignal = waitQueue.poll();
-			numThreadsInQueue--; //TESTING STUFF
-			System.out.println("Thread " + KThread.currentThread().getName() + " has woken up");
-			System.out.println("There are " + numThreadsInQueue + " threads in the wait queue");
 			boolean intStatus = Machine.interrupt().disable();
 			threadToSignal.ready();
 			Machine.interrupt().restore(intStatus);
@@ -104,9 +98,9 @@ public class Condition2 {
 			} else {
 				while (numWaiting > 0) {
 					cond.wake();
-//					numWaiting--;
+					numWaiting--;
 //					cond.wakeAll();
-					numWaiting = 0;
+//					numWaiting = 0;
 				}
 			}
 			lock.release();
@@ -115,6 +109,7 @@ public class Condition2 {
 		private Condition2 cond;
 		private Lock lock;
 		private static int numWaiting = 0;
+		private static boolean wakeAll = false;
 	}
 
 
