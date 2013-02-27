@@ -35,7 +35,7 @@ public class Alarm {
 	 */
 	public void timerInterrupt() {
 		Queue<ThreadAndTime<KThread,Long>> wakeUpList = new LinkedList<ThreadAndTime<KThread,Long>>();
-		
+
 		for (ThreadAndTime<KThread,Long> pair : waitingThreads) {
 			if (Machine.timer().getTime() >= pair.getTime()) {
 				((nachos.threads.KThread) pair.getThread()).ready();
@@ -46,6 +46,8 @@ public class Alarm {
 			waitingThreads.remove(pair);
 		}
 		wakeUpList.clear();
+		KThread.yield();
+
 	}
 
 	/**

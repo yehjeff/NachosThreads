@@ -561,51 +561,6 @@ public class PriorityScheduler extends Scheduler {
 		ThreadedKernel.scheduler.decreasePriority();
 
 
-		System.out.println("\n\nNow with locks");
-		Lock lock = new Lock();
-		newThread = new KThread(new LockTest(1, lock, null));
-		newThread.fork();
-		newThread.join();
-
-
-
-	}
-
-	private static class LockTest implements Runnable {
-		LockTest(int which, Lock lock, KThread thread){
-			this.which = which;
-			this.lock = lock;
-			this.thread = thread;
-		}
-		public void run(){
-			if (this.which == 1){
-				lock.acquire();
-				KThread newThread = new KThread(new LockTest(2, lock, KThread.currentThread()));
-				newThread.fork();
-				Machine.interrupt().disable();
-				int threadZeroPriority = ThreadedKernel.scheduler.getEffectivePriority(KThread.currentThread());
-				Machine.interrupt().enable();
-				System.out.println("After Thread1 acquires lock: Thread 1's effecive priority: " + threadZeroPriority);
-				Machine.interrupt().disable();
-
-				KThread.sleep();
-				threadZeroPriority = ThreadedKernel.scheduler.getEffectivePriority(KThread.currentThread());
-				System.out.println("When Thread2 is waiting for lock: Thread 1's effecive priority: " + threadZeroPriority);
-				Machine.interrupt().enable();
-
-			} else if (this.which == 2){
-				ThreadedKernel.scheduler.increasePriority();
-				Machine.interrupt().disable();
-				this.thread.ready();
-				lock.acquire();
-				Machine.interrupt().enable();
-
-
-			}
-		}
-		private KThread thread;
-		private int which;
-		private Lock lock;
 	}
 	private static class JoinTest implements Runnable {
 		JoinTest(int which){
