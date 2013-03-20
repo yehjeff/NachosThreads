@@ -496,7 +496,7 @@ public class UserProcess {
 	}
 
 	private int handleExec(int filenameAddr, int argc, int argv){
-		if (argc < 0 || filenameAddr < 0){
+		if (argc < 0 || filenameAddr < 0 ){
 			return -1;
 		}
 		String filename = readVirtualMemoryString(filenameAddr, 255);
@@ -649,7 +649,7 @@ public class UserProcess {
 	 * @return	<tt>true</tt> if the address can be read correctly.
 	 */
 	private boolean addrLegit(int addr, int count) {
-		if (addr + count <= pageTable.length * pageSize && addr > 0) {
+		if (addr + count <= pageTable.length * pageSize && addr > 0) {		// are we supposed to assume address cant be 0? 
 			return true;
 		} else {
 			handleExit(-2);
