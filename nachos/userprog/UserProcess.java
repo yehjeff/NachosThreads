@@ -472,7 +472,7 @@ public class UserProcess {
     	int intWordAddr;
     	String[] realArgs = new String[argc];
     	for (int i = 0; i < argc; i++){		
-    		readVirtualMemory(argv, byteWordAddr, 0, 4);
+    		readVirtualMemory(argv +i*4, byteWordAddr, 0, 4);
    			intWordAddr = Lib.bytesToInt(byteWordAddr,0);
   			realArgs[i] = readVirtualMemoryString(intWordAddr, 255);
     	}
@@ -534,8 +534,8 @@ public class UserProcess {
     private static final char dbgProcess = 'a';
     
     /* Added variables */
-    private static int numProcessesAlive;
-    private static Lock numProcessesAliveLock;
+    private static int numProcessesAlive = 0;
+    private static Lock numProcessesAliveLock = new Lock();
     
     protected HashMap<Integer,Integer> childrenExitStatuses = new HashMap<Integer,Integer>();
     protected HashSet<Integer> childrenAbnormallyExited = new HashSet<Integer>();
