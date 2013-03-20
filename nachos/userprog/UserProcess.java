@@ -411,6 +411,7 @@ public class UserProcess {
     public void handleException(int cause) {
 	Processor processor = Machine.processor();
 
+	
 	switch (cause) {
 	case Processor.exceptionSyscall:
 	    int result = handleSyscall(processor.readRegister(Processor.regV0),
