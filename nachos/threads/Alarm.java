@@ -20,7 +20,7 @@ public class Alarm {
 		Machine.timer().setInterruptHandler(new Runnable() {
 			public void run() { timerInterrupt(); }
 		});
-		this.waitingThreads = new java.util.PriorityQueue<ThreadAndTime>();
+		this.waitingThreads = new java.util.PriorityQueue<ThreadAndTime<KThread,Long>>();
 	}
 
 	/**
@@ -34,18 +34,20 @@ public class Alarm {
 	 * 				error?)
 	 */
 	public void timerInterrupt() {
-		Queue<ThreadAndTime> wakeUpList = new LinkedList<ThreadAndTime>();
-		
-		for (ThreadAndTime pair : waitingThreads) {
+		Queue<ThreadAndTime<KThread,Long>> wakeUpList = new LinkedList<ThreadAndTime<KThread,Long>>();
+
+		for (ThreadAndTime<KThread,Long> pair : waitingThreads) {
 			if (Machine.timer().getTime() >= pair.getTime()) {
 				((nachos.threads.KThread) pair.getThread()).ready();
 				wakeUpList.add(pair);
 			}
 		}
-		for (ThreadAndTime pair : wakeUpList) {
+		for (ThreadAndTime<KThread,Long> pair : wakeUpList) {
 			waitingThreads.remove(pair);
 		}
 		wakeUpList.clear();
+		KThread.yield();
+
 	}
 
 	/**
@@ -68,17 +70,17 @@ public class Alarm {
 		// while (wakeTime > Machine.timer().getTime())
 		// KThread.yield();
 		long wakeTime = Machine.timer().getTime() + x;
-		waitingThreads.add(new ThreadAndTime(KThread.currentThread(), wakeTime));
+		waitingThreads.add(new ThreadAndTime<KThread,Long>(KThread.currentThread(), wakeTime));
 		boolean intStatus = Machine.interrupt().disable();
-		KThread.currentThread().sleep();
+		KThread.sleep();
 		Machine.interrupt().restore(intStatus);
 	}
 
 
 	/**
-	 * PUT COMMENTS HERE
+	 * Private 
 	 */
-	private class ThreadAndTime<KThread,Long>  {
+	private class ThreadAndTime<KThread,Long> implements Comparable<ThreadAndTime<KThread,Long>> {
 		public KThread thread;
 		public long time;
 
@@ -105,9 +107,9 @@ public class Alarm {
 	/**
 	 * waitingThreads: a queue of KThreads to keep track of the threads waiting on the condition
 	 */
-	private java.util.PriorityQueue<ThreadAndTime> waitingThreads;
-	
-	
+	private java.util.PriorityQueue<ThreadAndTime<KThread,Long>> waitingThreads;
+
+
 	/**
 	 * TESTING STUFF
 	 */
@@ -126,16 +128,16 @@ public class Alarm {
 
 		System.out.println("\n Entering Alarm.selfTest()");
 		Alarm alarm = new Alarm();
-		
+
 		System.out.println("\nTesting 1 thread for 1 second");
 		alarm.waitUntil(1);
 
 		System.out.println("\nTesting 1 thread for 10 seconds");
 		alarm.waitUntil(10);
-		
+
 		System.out.println("\nTesting 1 thread for 1000 seconds");
 		alarm.waitUntil(1000);
-		
+
 		System.out.println("\nTesting 2 threads for various times");
 		KThread wakeUp1 = new KThread(new PingTest()).setName("wakeUp1");
 		wakeUp1.fork();
@@ -147,8 +149,8 @@ public class Alarm {
 		alarm.waitUntil(10000);
 		alarm.waitUntil(700);
 		alarm.waitUntil(1500);
-		
+
 		System.out.println("\n Finished testing Alarm.java");
 	}
-	
+
 }

@@ -24,7 +24,7 @@ public class Boat
 	{
 		BoatGrader b = new BoatGrader();
 		//base case
-		
+		/*
 		System.out.println("\n ***Testing Boats with only 2 children***");
 		begin(0, 2, b);
 		
@@ -51,6 +51,10 @@ public class Boat
 		//add multiple of each to base case
 		System.out.println("\n ***Testing Boats with 13 children, 13 adults***");
 		begin(13, 13, b);
+		*/
+		//stress test
+		System.out.println("\n ***Testing Boats with hella children, hella adults***");
+		begin(124, 124, b);
 		
 	}
 
@@ -75,7 +79,7 @@ public class Boat
 		isFinished = new Condition(lock);
 		isBoatMolo = new Condition(lock);
 		isBoatOahu = new Condition(lock);
-		isDone = new Condition(lock); //just another condition for the adults to permanently wait on
+		isDone = new Condition(lock);
 		
 		// Create threads here. See section 3.4 of the Nachos for Java
 		// Walkthrough linked from the projects page.
@@ -88,7 +92,9 @@ public class Boat
 		//KThread t = new KThread(r);
 		//t.setName("Sample Boat Thread");
 		//t.fork();
-		lock.acquire();		
+		
+		lock.acquire();	
+		
 		//adult thread runnable
 		Runnable ad = new Runnable() {
 			public void run() {
@@ -133,11 +139,10 @@ public class Boat
 	       bg.AdultRowToMolokai();
 	   indicates that an adult has rowed the boat across to Molokai
 		 */
+		
 		//Adult Thread Startup
 		lock.acquire();
 		numAdultOahu++;
-		//int whereAmI = OAHU;
-		
 		//confirm if safe to row
 		while (boatLocation != OAHU || numChildMolo == 0 || numChildOnBoat == 1) {
 			isBoatOahu.wake();
@@ -148,13 +153,9 @@ public class Boat
 		numAdultOahu--;
 		numAdultMolo++;
 		boatLocation = MOLOKAI;
-		//whereAmI = MOLOKAI;
 		//wake up a child to row back
 		isBoatMolo.wake();
-		//lock.release();
-		//System.out.println("\n Time2PermaSleep");
 		isDone.sleep();
-		//KThread.finish();
 	}
 
 	
@@ -179,7 +180,6 @@ public class Boat
 					alarm.waitUntil((long) 100.0);
 					lock.acquire();
 					//System.out.println("Well they were wrong, there are "+(numChildOahu+numAdultOahu)+" people left on Oahu");
-					//isBoatMolo.sleep();
 					
 				} else {
 					bg.ChildRowToOahu();
@@ -187,7 +187,6 @@ public class Boat
 					numChildOahu++;
 					boatLocation = OAHU;
 					whereAmI = OAHU;
-					//System.out.println("Upon arrival there will be "+numChildOahu+" kids, "+numAdultOahu+" adults on Oahu");
 					//only wake and sleep if island not empty
 					if (numChildOahu > 1 || numAdultOahu > 0) { //if still more people on Oahu
 						isBoatOahu.wake();
@@ -195,7 +194,7 @@ public class Boat
 					}
 				}
 			} else { //whereAmI must = OAHU
-				while (boatLocation != OAHU || numChildOnBoat >= 2) { //second check may be unneeded because of lock
+				while (boatLocation != OAHU) {
 					isBoatOahu.sleep();
 				}
 				numChildOnBoat++;	//this value is reset when they get to Molokai
@@ -208,8 +207,7 @@ public class Boat
 					//check if there is another child to wake to be rider			
 					if (numChildOahu==0) { //if child alone on Oahu (last child checking and empty)
 						boatLocation = MOLOKAI;
-						OahuSupposedlyEmpty = true;
-						//System.out.println("\nOahuKids:"+numChildOahu);
+						OahuSupposedlyEmpty = true; //if this is true, that means there was no other sleeping child that brought the boat back to Oahu
 					} else { //child not alone, there is at least 2 children on island (prev. rower is asleep)
 						isBoatOahu.wake(); //wake child to ride
 						isBoatMolo.sleep();	//let rider deal with Molo and rowing back
@@ -223,13 +221,11 @@ public class Boat
 					//check if island is empty
 					if (numChildOahu == 0 && numAdultOahu == 0) {
 						OahuSupposedlyEmpty = true;
-						//System.out.println("rider thinks he is last");
 					}
 					//rider doesn't need to sleep or wake anyone on Molo, outer while-loop will happen again
 				}
 			}
 		}
-		//lock.release();
 	}
 
 	static void SampleItinerary()
