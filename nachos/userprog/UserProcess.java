@@ -504,11 +504,11 @@ public class UserProcess {
 		int intWordAddr;
 		String[] realArgs = new String[argc];
 		for (int i = 0; i < argc; i++){		
-			readVirtualMemory(argv, byteWordAddr, 0, 4);
+			readVirtualMemory(argv + i*4, byteWordAddr, 0, 4);
 			intWordAddr = Lib.bytesToInt(byteWordAddr,0);
-			realArgs[i] = readVirtualMemoryString(intWordAddr, 255);
+			realArgs[i] = readVirtualMemoryString(intWordAddr, 255);		//is programname supposed to be in this list?
 		}
-		if (filename.length() < 6 ||  filename.substring(filename.length()-5) != ".coff") //file name has to end with .coff
+		if (filename.length() < 6 ||  filename.substring(filename.length()-5) == ".coff") //file name has to end with .coff
 			return -1;
 		UserProcess child = newUserProcess();
 		this.childrenExitStatuses.put(child.processID, null);
@@ -569,13 +569,17 @@ public class UserProcess {
 	private int handleRead(int fd, int bufferAddr, int size) {
 		if (fd < 0 || bufferAddr < 0 || size < 0 || fileArray[fd]==null	|| !addrLegit(bufferAddr, size))
 			return -1;
-		OpenFile file = fileArray[fd];
+		OpenFile file = fileArray[fd];			
 		byte[] buffer = new byte[pageSize];
 		int numBytesRead = 0;
-		for (int i = 0; i < size%pageSize+1; i++) {
-			numBytesRead += file.read(buffer, 0, pageSize);
+		int numBytesWritten = 0;
+		int sizeLeftToRead = size;
+		for (int i = 0; i < size/pageSize+1; i++) {			//divide, not mod
+			numBytesRead = file.read(buffer, 0, Math.min(sizeLeftToRead, pageSize));			
+			sizeLeftToRead -= numBytesRead;
+			numBytesWritten += writeVirtualMemory(bufferAddr, buffer, 0, numBytesRead);
 		}
-		return writeVirtualMemory(bufferAddr, buffer, 0, numBytesRead);
+		return size - sizeLeftToRead;	// changed
 	}
 
 	private int handleWrite(int fd, int bufferAddr, int size) {
@@ -585,9 +589,11 @@ public class UserProcess {
 		OpenFile file = fileArray[fd];
 		int numBytesRead = 0;
 		int numBytesWritten = 0;
-		for (int i = 0; i < size%pageSize+1; i++) {
-			numBytesRead += readVirtualMemory(bufferAddr, buffer, 0, pageSize);
-			numBytesWritten += file.write(buffer, 0, pageSize);
+		int sizeLeftToRead = size;
+		for (int i = 0; i < size/pageSize+1; i++) {			//divide, not mod
+			numBytesRead = readVirtualMemory(bufferAddr, buffer, 0, Math.min(pageSize,sizeLeftToRead));
+			sizeLeftToRead -= numBytesRead;
+			numBytesWritten += file.write(buffer, 0, numBytesRead);		// changed and lines above
 		}
 		if (numBytesWritten < size)
 			return -1;
