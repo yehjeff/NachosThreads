@@ -528,10 +528,65 @@ public class UserProcess {
 		if (numFreeFileDesc == 0 || !addrLegit(stringAddr, 256))
 			return -1;
 		String name = readVirtualMemoryString(stringAddr,255);
-		if (!FileSystem.checkName(name))
+//		if (!FileSystem.checkName(name))
+//			return -1;
+		OpenFile newFile = UserKernel.fileSystem.open(name, true);
+		return addToFileArray(newFile);        //returns fileDescriptor
+	}
+
+	private int handleOpen(int stringAddr) {
+		if (numFreeFileDesc == 0 || !addrLegit(stringAddr, 256))
 			return -1;
-		OpenFile newFile = UserKernel.fileSystem.open(name, true)
-				return addToFileArray(newFile);        //returns fileDescriptor
+		String name = readVirtualMemoryString(stringAddr,255);
+//		if (!fileSystem.checkName(name))
+//			return -1;
+		OpenFile newFile = UserKernel.fileSystem.open(name, false);
+		if (newFile == null)
+			return -1;
+		return addToFileArray(newFile);    //returns fileDescriptor
+	}
+
+	private int handleRead(int fd, int bufferAddr, int size) {
+		if (fd < 0 || bufferAddr < 0 || size < 0 || fileArray[fd]==null	|| !addrLegit(bufferAddr, size))
+			return -1;
+		OpenFile file = fileArray[fd];
+		byte[] buffer = new byte[size];
+		int numBytesRead = file.read(buffer, 0, size);
+		return writeVirtualMemory(bufferAddr, buffer, 0, numBytesRead);
+	}
+
+	private int handleWrite(int fd, int bufferAddr, int size) {
+		if (fd < 0 || size < 0 || fileArray[fd] == null || !addrLegit(bufferAddr, size))
+			return -1;
+		byte[] buffer = new byte[size];
+		OpenFile file = fileArray[fd];
+		int numBytesRead = readVirtualMemory(bufferAddr, buffer, 0, size);
+		int numBytesWritten = file.write(buffer, 0, size);
+		if (numBytesWritten < size)
+			return -1;
+		return numBytesWritten;
+	}
+
+	private int handleClose(int fd) {
+		if (fd < 0 || fileArray[fd] == null)
+			return -1;
+		OpenFile file = fileArray[fd];
+		fileArray[fd] = null;
+		numFreeFileDesc++;
+		file.close();
+		return 0;
+	}
+
+	private int handleUnlink(int stringAddr) {
+		if (!addrLegit(stringAddr, 256))
+			return -1;
+		String name = readVirtualMemoryString(stringAddr, 256);
+//		if (!fileSystem.checkName(name))
+//			return -1;
+		if (UserKernel.fileSystem.remove(name))
+			return 0;
+		else
+			return -1;
 	}
 
 
@@ -562,13 +617,12 @@ public class UserProcess {
 	 */
 	private boolean addrLegit(int addr, int count) {
 		if (addr + count <= pageTable.length * pageSize && addr > 0) {
-
 			return true;
-
 		} else {
 			handleExit(-2);
-			assertNotReached(“Failed to exit on illegal address”);
+			Lib.assertNotReached();
 		}
+		return false;
 	}
 
 	/** The program being run by this process. */
@@ -579,37 +633,37 @@ public class UserProcess {
 	/** The number of contiguous pages occupied by the program. */
 	protected int numPages;
 
-    /** The number of pages in the program's stack. */
-    protected final int stackPages = 8;
-    
-    private int initialPC, initialSP;
-    private int argc, argv;
-	
-    private static final int pageSize = Processor.pageSize;
-    private static final char dbgProcess = 'a';
-    
-    /* Added variables */
+	/** The number of pages in the program's stack. */
+	protected final int stackPages = 8;
+
+	private int initialPC, initialSP;
+	private int argc, argv;
+
+	private static final int pageSize = Processor.pageSize;
+	private static final char dbgProcess = 'a';
+
+	/* Added variables */
 	/** The total number of processes currently/have been running. */
 	private static int processCount = 0;
 	/** The lock for processCount. */
 	private static Lock processCountLock;
-	
-    private static int numProcessesAlive = 0;
-    private static Lock numProcessesAliveLock = new Lock();
-    
-    protected HashMap<Integer,Integer> childrenExitStatuses = new HashMap<Integer,Integer>();
-    protected HashSet<Integer> childrenAbnormallyExited = new HashSet<Integer>();
-    protected HashSet<UserProcess> childrenProcesses = new HashSet<UserProcess>();
-    protected UserProcess parentProcess = null;
-    private boolean exitingAbnormally = false;
+
+	private static int numProcessesAlive = 0;
+	private static Lock numProcessesAliveLock = new Lock();
+
+	protected HashMap<Integer,Integer> childrenExitStatuses = new HashMap<Integer,Integer>();
+	protected HashSet<Integer> childrenAbnormallyExited = new HashSet<Integer>();
+	protected HashSet<UserProcess> childrenProcesses = new HashSet<UserProcess>();
+	protected UserProcess parentProcess = null;
+	private boolean exitingAbnormally = false;
 	/** This is the process's unique ID. */
-    protected int processID;
+	protected int processID;
 	/** Holds the process's files, indexed by file descriptors. */
 	protected OpenFile[] fileArray;
 	/** The number of free file slots this process has in fileArray. */
 	protected int numFreeFileDesc;
-    
-    /*3. parent hold  2 hashmaps matches  child�fs PID with exit status and PID with abnormal exit flag
+
+	/*3. parent hold  2 hashmaps matches  child�fs PID with exit status and PID with abnormal exit flag
 3. numprocessesalive should be == 0, not 1 in handleExit() [OK]
 3. handleExit(): have some sort of flag for abnormal exit ?   
 3. handleExec(): check the arguments first before initalizing the user processes [just swap?] yis
