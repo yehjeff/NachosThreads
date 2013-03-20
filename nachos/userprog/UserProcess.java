@@ -408,32 +408,36 @@ public class UserProcess {
 	 * @return	the value to be returned to the user.
 	 */
 	public int handleSyscall(int syscall, int a0, int a1, int a2, int a3) {
-		switch (syscall) {
-		case syscallHalt:
-			return handleHalt();
-		case syscallExit:
-			return handleExit(a0);
-		case syscallExec:
-			return handleExec(a0,a1,a2);
-		case syscallJoin:
-			return handleJoin(a0,a1);        
-		case syscallCreate:
-			return handleCreate(a0);
-		case syscallOpen:
-			return handleOpen(a0);
-		case syscallRead:
-			return handleRead(a0,a1,a2);
-		case syscallWrite:
-			return handleWrite(a0,a1,a2);
-		case syscallClose:
-			return handleClose(a0);
-		case syscallUnlink:
-			return handleUnlink(a0);
+		try {
+			switch (syscall) {
+			case syscallHalt:
+				return handleHalt();
+			case syscallExit:
+				return handleExit(a0);
+			case syscallExec:
+				return handleExec(a0,a1,a2);
+			case syscallJoin:
+				return handleJoin(a0,a1);        
+			case syscallCreate:
+				return handleCreate(a0);
+			case syscallOpen:
+				return handleOpen(a0);
+			case syscallRead:
+				return handleRead(a0,a1,a2);
+			case syscallWrite:
+				return handleWrite(a0,a1,a2);
+			case syscallClose:
+				return handleClose(a0);
+			case syscallUnlink:
+				return handleUnlink(a0);
 
-		default:
-			Lib.debug(dbgProcess, "Unknown syscall " + syscall);
-			//			Lib.assertNotReached("Unknown system call!");
-			this.exitingAbnormally = true;					// is this correct?
+			default:
+				Lib.debug(dbgProcess, "Unknown syscall " + syscall);
+				//			Lib.assertNotReached("Unknown system call!");
+				this.exitingAbnormally = true;					// is this correct?
+				handleExit(-1);
+			}
+		} catch (Exception e) {
 			handleExit(-1);
 		}
 		return 0;
@@ -574,7 +578,7 @@ public class UserProcess {
 		int numBytesRead = 0;
 		int numBytesWritten = 0;
 		int sizeLeftToRead = size;
-		for (int i = 0; i < size/pageSize+1; i++) {			//divide, not mod
+		for (int i = 0; i < size/pageSize+1; i++) {
 			numBytesRead = file.read(buffer, 0, Math.min(sizeLeftToRead, pageSize));			
 			sizeLeftToRead -= numBytesRead;
 			numBytesWritten += writeVirtualMemory(bufferAddr, buffer, 0, numBytesRead);
@@ -590,8 +594,8 @@ public class UserProcess {
 		int numBytesRead = 0;
 		int numBytesWritten = 0;
 		int sizeLeftToRead = size;
-		for (int i = 0; i < size/pageSize+1; i++) {			//divide, not mod
-			numBytesRead = readVirtualMemory(bufferAddr, buffer, 0, Math.min(pageSize,sizeLeftToRead));
+		for (int i = 0; i < size/pageSize+1; i++) {
+			numBytesRead = readVirtualMemory(bufferAddr, buffer, 0, Math.min(sizeLeftToRead, pageSize));
 			sizeLeftToRead -= numBytesRead;
 			numBytesWritten += file.write(buffer, 0, numBytesRead);		// changed and lines above
 		}
