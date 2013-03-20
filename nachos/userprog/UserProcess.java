@@ -495,7 +495,6 @@ public class UserProcess {
 		this.childrenProcesses.add(child);
 		child.parentProcess = this;
 
-
 		if (!child.execute(filename, realArgs))
 			return -1;
 		return child.processID;
@@ -514,7 +513,6 @@ public class UserProcess {
 			childProcess.parentProcess = this;
 			KThread.sleep();
 		}
-
 
 		childExitStatus = this.childrenExitStatuses.get(processID);
 		this.childrenExitStatuses.remove(processID);
@@ -581,38 +579,27 @@ public class UserProcess {
 	/** The number of contiguous pages occupied by the program. */
 	protected int numPages;
 
-	/** The number of pages in the program's stack. */
-	protected final int stackPages = 8;
-
-	private int initialPC, initialSP;
-	private int argc, argv;
-
-	private static final int pageSize = Processor.pageSize;
-	private static final char dbgProcess = 'a';
-
-	/* Added variables */
-
-	/** The total number of processes that has/have been running. */
-	static int processCount = 0;
-	/** The lock for processCount. */
-	static Lock processCountLock;
-
-	private static int numProcessesAlive;
-	private static Lock numProcessesAliveLock;
-
-	protected HashMap<Integer,Integer> childrenExitStatuses = new HashMap<Integer,Integer>();
-	protected HashSet<Integer> childrenAbnormallyExited = new HashSet<Integer>();
-	protected HashSet<UserProcess> childrenProcesses = new HashSet<UserProcess>();
-	protected UserProcess parentProcess = null;
-	private boolean exitingAbnormally = false;
-	/** This is the process's unique ID. */
-	protected int processID;
-	/** Holds the process's files, indexed by file descriptors. */
-	protected OpenFile[] fileArray;
-	/** The number of free file slots this process has in fileArray. */
-	protected int numFreeFileDesc;
-
-	/*3. parent hold  2 hashmaps matches  child's PID with exit status and PID with abnormal exit flag
+    /** The number of pages in the program's stack. */
+    protected final int stackPages = 8;
+    
+    private int initialPC, initialSP;
+    private int argc, argv;
+	
+    private static final int pageSize = Processor.pageSize;
+    private static final char dbgProcess = 'a';
+    
+    /* Added variables */
+    private static int numProcessesAlive = 0;
+    private static Lock numProcessesAliveLock = new Lock();
+    
+    protected HashMap<Integer,Integer> childrenExitStatuses = new HashMap<Integer,Integer>();
+    protected HashSet<Integer> childrenAbnormallyExited = new HashSet<Integer>();
+    protected HashSet<UserProcess> childrenProcesses = new HashSet<UserProcess>();
+    protected UserProcess parentProcess = null;
+    private boolean exitingAbnormally = false;
+    protected int processID;
+    
+    /*3. parent hold  2 hashmaps matches  child�fs PID with exit status and PID with abnormal exit flag
 3. numprocessesalive should be == 0, not 1 in handleExit() [OK]
 3. handleExit(): have some sort of flag for abnormal exit ?   
 3. handleExec(): check the arguments first before initalizing the user processes [just swap?] yis
