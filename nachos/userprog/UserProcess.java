@@ -431,8 +431,9 @@ public class UserProcess {
 			return handleUnlink(a0);
 
 		default:
-			//			Lib.debug(dbgProcess, "Unknown syscall " + syscall);
+			Lib.debug(dbgProcess, "Unknown syscall " + syscall);
 			//			Lib.assertNotReached("Unknown system call!");
+			this.exitingAbnormally = true;					// is this correct?
 			handleExit(-1);
 		}
 		return 0;
@@ -460,18 +461,21 @@ public class UserProcess {
 			processor.writeRegister(Processor.regV0, result);
 			processor.advancePC();
 			break;
-		case 162:
-			this.exitingAbnormally = true;
-			handleExit(162);
+
 
 		default:
-			Lib.debug(dbgProcess, "Unexpected exception: " +
-					Processor.exceptionNames[cause]);
+			Lib.debug(dbgProcess, "Unexpected exception: " + Processor.exceptionNames[cause]);
+			this.exitingAbnormally = true;
+			handleExit(162);
 			Lib.assertNotReached("Unexpected exception");
 		}
 	}
 
 	private int handleExit(int status){
+		for (OpenFile file : fileArray){
+			if (file != null)
+				file.close();
+		}
 		unloadSections();
 		if (this.parentProcess != null){
 			this.parentProcess.childrenExitStatuses.put(this.processID, status);
@@ -480,6 +484,7 @@ public class UserProcess {
 		}
 		numProcessesAliveLock.acquire();
 		numProcessesAlive -= 1;
+
 		if (numProcessesAlive == 0){
 			numProcessesAliveLock.release();
 			Kernel.kernel.terminate();
@@ -668,7 +673,7 @@ public class UserProcess {
 	/** The total number of processes currently/have been running. */
 	private static int processCount = 0;
 	/** The lock for processCount. */
-	private static Lock processCountLock;
+	private static Lock processCountLock = new Lock();
 
 	private static int numProcessesAlive = 0;
 	private static Lock numProcessesAliveLock = new Lock();
