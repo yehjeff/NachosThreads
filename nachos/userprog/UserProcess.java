@@ -589,6 +589,11 @@ public class UserProcess {
     private static final char dbgProcess = 'a';
     
     /* Added variables */
+	/** The total number of processes currently/have been running. */
+	private static int processCount = 0;
+	/** The lock for processCount. */
+	private static Lock processCountLock;
+	
     private static int numProcessesAlive = 0;
     private static Lock numProcessesAliveLock = new Lock();
     
@@ -597,7 +602,12 @@ public class UserProcess {
     protected HashSet<UserProcess> childrenProcesses = new HashSet<UserProcess>();
     protected UserProcess parentProcess = null;
     private boolean exitingAbnormally = false;
+	/** This is the process's unique ID. */
     protected int processID;
+	/** Holds the process's files, indexed by file descriptors. */
+	protected OpenFile[] fileArray;
+	/** The number of free file slots this process has in fileArray. */
+	protected int numFreeFileDesc;
     
     /*3. parent hold  2 hashmaps matches  child�fs PID with exit status and PID with abnormal exit flag
 3. numprocessesalive should be == 0, not 1 in handleExit() [OK]
