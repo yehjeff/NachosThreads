@@ -416,12 +416,24 @@ public class UserProcess {
 		case syscallExec:
 			return handleExec(a0,a1,a2);
 		case syscallJoin:
-			return handleJoin(a0,a1);
-
+			return handleJoin(a0,a1);        
+		case syscallCreate:
+			return handleCreate(a0);
+		case syscallOpen:
+			return handleOpen(a0);
+		case syscallRead:
+			return handleRead(a0,a1,a2);
+		case syscallWrite:
+			return handleWrite(a0,a1,a2);
+		case syscallClose:
+			return handleClose(a0);
+		case syscallUnlink:
+			return handleUnlink(a0);
 
 		default:
-			Lib.debug(dbgProcess, "Unknown syscall " + syscall);
-			Lib.assertNotReached("Unknown system call!");
+			//			Lib.debug(dbgProcess, "Unknown syscall " + syscall);
+			//			Lib.assertNotReached("Unknown system call!");
+			handleExit(-1);
 		}
 		return 0;
 	}
@@ -447,7 +459,10 @@ public class UserProcess {
 					);
 			processor.writeRegister(Processor.regV0, result);
 			processor.advancePC();
-			break;				       
+			break;
+		case 162:
+			this.exitingAbnormally = true;
+			handleExit(162);
 
 		default:
 			Lib.debug(dbgProcess, "Unexpected exception: " +
@@ -528,8 +543,8 @@ public class UserProcess {
 		if (numFreeFileDesc == 0 || !addrLegit(stringAddr, 256))
 			return -1;
 		String name = readVirtualMemoryString(stringAddr,255);
-//		if (!FileSystem.checkName(name))
-//			return -1;
+		//		if (!FileSystem.checkName(name))
+		//			return -1;
 		OpenFile newFile = UserKernel.fileSystem.open(name, true);
 		return addToFileArray(newFile);        //returns fileDescriptor
 	}
@@ -538,8 +553,8 @@ public class UserProcess {
 		if (numFreeFileDesc == 0 || !addrLegit(stringAddr, 256))
 			return -1;
 		String name = readVirtualMemoryString(stringAddr,255);
-//		if (!fileSystem.checkName(name))
-//			return -1;
+		//		if (!fileSystem.checkName(name))
+		//			return -1;
 		OpenFile newFile = UserKernel.fileSystem.open(name, false);
 		if (newFile == null)
 			return -1;
@@ -550,18 +565,25 @@ public class UserProcess {
 		if (fd < 0 || bufferAddr < 0 || size < 0 || fileArray[fd]==null	|| !addrLegit(bufferAddr, size))
 			return -1;
 		OpenFile file = fileArray[fd];
-		byte[] buffer = new byte[size];
-		int numBytesRead = file.read(buffer, 0, size);
+		byte[] buffer = new byte[pageSize];
+		int numBytesRead = 0;
+		for (int i = 0; i < size%pageSize+1; i++) {
+			numBytesRead += file.read(buffer, 0, pageSize);
+		}
 		return writeVirtualMemory(bufferAddr, buffer, 0, numBytesRead);
 	}
 
 	private int handleWrite(int fd, int bufferAddr, int size) {
 		if (fd < 0 || size < 0 || fileArray[fd] == null || !addrLegit(bufferAddr, size))
 			return -1;
-		byte[] buffer = new byte[size];
+		byte[] buffer = new byte[pageSize];
 		OpenFile file = fileArray[fd];
-		int numBytesRead = readVirtualMemory(bufferAddr, buffer, 0, size);
-		int numBytesWritten = file.write(buffer, 0, size);
+		int numBytesRead = 0;
+		int numBytesWritten = 0;
+		for (int i = 0; i < size%pageSize+1; i++) {
+			numBytesRead += readVirtualMemory(bufferAddr, buffer, 0, pageSize);
+			numBytesWritten += file.write(buffer, 0, pageSize);
+		}
 		if (numBytesWritten < size)
 			return -1;
 		return numBytesWritten;
@@ -581,8 +603,8 @@ public class UserProcess {
 		if (!addrLegit(stringAddr, 256))
 			return -1;
 		String name = readVirtualMemoryString(stringAddr, 256);
-//		if (!fileSystem.checkName(name))
-//			return -1;
+		//		if (!fileSystem.checkName(name))
+		//			return -1;
 		if (UserKernel.fileSystem.remove(name))
 			return 0;
 		else
@@ -620,7 +642,7 @@ public class UserProcess {
 			return true;
 		} else {
 			handleExit(-2);
-			Lib.assertNotReached();
+			Lib.assertNotReached("Failed to exit on illegal address");
 		}
 		return false;
 	}
@@ -663,7 +685,7 @@ public class UserProcess {
 	/** The number of free file slots this process has in fileArray. */
 	protected int numFreeFileDesc;
 
-	/*3. parent hold  2 hashmaps matches  child�fs PID with exit status and PID with abnormal exit flag
+	/*3. parent hold  2 hashmaps matches  child's PID with exit status and PID with abnormal exit flag
 3. numprocessesalive should be == 0, not 1 in handleExit() [OK]
 3. handleExit(): have some sort of flag for abnormal exit ?   
 3. handleExec(): check the arguments first before initalizing the user processes [just swap?] yis
