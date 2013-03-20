@@ -5,6 +5,8 @@ import nachos.threads.*;
 import nachos.userprog.*;
 
 import java.io.EOFException;
+import java.util.HashMap;
+import java.util.HashSet;
 
 /**
  * Encapsulates the state of a user process that is not contained in its
@@ -19,6 +21,40 @@ import java.io.EOFException;
  * @see	nachos.network.NetProcess
  */
 public class UserProcess {
+	/**
+	 * Allocate a new process.
+	 */
+	public UserProcess() {
+		int numPhysPages = Machine.processor().getNumPhysPages();
+		pageTable = new TranslationEntry[numPhysPages];
+		for (int i=0; i<numPhysPages; i++)
+			pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
+	}
+
+	/**
+	 * Allocate and return a new process of the correct class. The class name
+	 * is specified by the <tt>nachos.conf</tt> key
+	 * <tt>Kernel.processClassName</tt>.
+	 *
+	 * @return	a new process of the correct class.
+	 */
+	public static UserProcess newUserProcess() {
+		return (UserProcess)Lib.constructObject(Machine.getProcessClassName());
+	}
+
+	/**
+	 * Execute the specified program with the specified arguments. Attempts to
+	 * load the program, and then forks a thread to run it.
+	 *
+	 * @param	name	the name of the file containing the executable.
+	 * @param	args	the arguments to pass to the executable.
+	 * @return	<tt>true</tt> if the program was successfully executed.
+	 */
+	public boolean execute(String name, String[] args) {
+		if (!load(name, args))
+			return false;
+
+		new UThread(this).setName(name).fork();
     /**
      * Allocate a new process.
      */
@@ -27,6 +63,12 @@ public class UserProcess {
 	pageTable = new TranslationEntry[numPhysPages];
 	for (int i=0; i<numPhysPages; i++)
 	    pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
+	
+	
+	numProcessesAliveLock.acquire();
+	numProcessesAlive++;
+	numProcessesAliveLock.release();
+	
     }
     
     /**
@@ -330,10 +372,10 @@ public class UserProcess {
 	processor.writeRegister(Processor.regPC, initialPC);
 	processor.writeRegister(Processor.regSP, initialSP);
 
-	// initialize the first two argument registers to argc and argv
-	processor.writeRegister(Processor.regA0, argc);
-	processor.writeRegister(Processor.regA1, argv);
-    }
+	/**
+	 * Handle the halt() system call. 
+	 */
+	private int handleHalt() {
 
     /**
      * Handle the halt() system call. 
@@ -391,6 +433,12 @@ public class UserProcess {
 	switch (syscall) {
 	case syscallHalt:
 	    return handleHalt();
+	case syscallExit:
+		return handleExit(a0);
+	case syscallExec:
+		return handleExec(a0,a1,a2);
+	case syscallJoin:
+		return handleJoin(a0,a1);
 
 
 	default:
@@ -429,9 +477,81 @@ public class UserProcess {
 	    Lib.assertNotReached("Unexpected exception");
 	}
     }
+    
+    private int handleExit(int status){
+    	unloadSections();
+    	if (this.parentProcess != null){
+    		this.parentProcess.childrenExitStatuses.put(this.processID, status);
+    		if (this.exitingAbnormally)
+    			this.parentProcess.childrenAbnormallyExited.add(this.processID);
+    	}
+    	numProcessesAliveLock.acquire();
+    	numProcessesAlive -= 1;
+    	if (numProcessesAlive == 0){
+    		numProcessesAliveLock.release();
+    		Kernel.kernel.terminate();
+    	} else {
+    		numProcessesAliveLock.release();
+    		KThread.finish();
+    	}
+    	return 0;
+    }
+    
+    private int handleExec(int filenameAddr, int argc, int argv){
+    	if (argc < 0 || filenameAddr < 0){
+    		return -1;
+    	}
+    	String filename = readVirtualMemoryString(filenameAddr, 255);
+    	byte[] byteWordAddr = new byte[4];
+    	int intWordAddr;
+    	String[] realArgs = new String[argc];
+    	for (int i = 0; i < argc; i++){		
+    		readVirtualMemory(argv, byteWordAddr, 0, 4);
+   			intWordAddr = Lib.bytesToInt(byteWordAddr,0);
+  			realArgs[i] = readVirtualMemoryString(intWordAddr, 255);
+    	}
+   	 	if (filename.length() < 6 ||  filename.substring(filename.length()-5) != ".coff") //file name has to end with .coff
+   			return -1;
+    	UserProcess child = newUserProcess();
+    	this.childrenExitStatuses.put(child.processID, null);
+    	this.childrenProcesses.add(child);
+    	child.parentProcess = this;
+    	
+    	
+  		if (!child.execute(filename, realArgs))
+  			return -1;
+    	return child.processID;
+    }
 
-    /** The program being run by this process. */
-    protected Coff coff;
+    private int handleJoin(int processID, int statusAddr){
+    	if (!this.childrenExitStatuses.containsKey(processID) || statusAddr < 0)
+    		return -1;
+    	Integer childExitStatus = childrenExitStatuses.get(processID);
+    	UserProcess childProcess = null;
+    	if (childExitStatus == null){
+    		for (UserProcess process : this.childrenProcesses){
+    			if (process.processID == processID)
+    				childProcess = process;
+    		}
+    		childProcess.parentProcess = this;
+    		KThread.sleep();
+    	}
+    	
+    	
+    	childExitStatus = this.childrenExitStatuses.get(processID);
+    	this.childrenExitStatuses.remove(processID);
+    	byte[] statusByte = Lib.bytesFromInt(childExitStatus);
+    	writeVirtualMemory(statusAddr,statusByte,0,4);
+    	if (this.childrenAbnormallyExited.contains(processID))
+    		return -1;
+    	else
+    		return 0;
+    		
+    	
+    }
+    
+	/** The number of pages in the program's stack. */
+	protected final int stackPages = 8;
 
     /** This process's page table. */
     protected TranslationEntry[] pageTable;
@@ -446,4 +566,22 @@ public class UserProcess {
 	
     private static final int pageSize = Processor.pageSize;
     private static final char dbgProcess = 'a';
+    
+    /* Added variables */
+    private static int numProcessesAlive;
+    private static Lock numProcessesAliveLock;
+    
+    protected HashMap<Integer,Integer> childrenExitStatuses = new HashMap<Integer,Integer>();
+    protected HashSet<Integer> childrenAbnormallyExited = new HashSet<Integer>();
+    protected HashSet<UserProcess> childrenProcesses = new HashSet<UserProcess>();
+    protected UserProcess parentProcess = null;
+    private boolean exitingAbnormally = false;
+    protected int processID;
+    
+    /*3. parent hold  2 hashmaps matches  child�fs PID with exit status and PID with abnormal exit flag
+3. numprocessesalive should be == 0, not 1 in handleExit() [OK]
+3. handleExit(): have some sort of flag for abnormal exit ?   
+3. handleExec(): check the arguments first before initalizing the user processes [just swap?] yis
+*/
+    
 }
