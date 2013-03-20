@@ -21,40 +21,6 @@ import java.util.HashSet;
  * @see	nachos.network.NetProcess
  */
 public class UserProcess {
-	/**
-	 * Allocate a new process.
-	 */
-	public UserProcess() {
-		int numPhysPages = Machine.processor().getNumPhysPages();
-		pageTable = new TranslationEntry[numPhysPages];
-		for (int i=0; i<numPhysPages; i++)
-			pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
-	}
-
-	/**
-	 * Allocate and return a new process of the correct class. The class name
-	 * is specified by the <tt>nachos.conf</tt> key
-	 * <tt>Kernel.processClassName</tt>.
-	 *
-	 * @return	a new process of the correct class.
-	 */
-	public static UserProcess newUserProcess() {
-		return (UserProcess)Lib.constructObject(Machine.getProcessClassName());
-	}
-
-	/**
-	 * Execute the specified program with the specified arguments. Attempts to
-	 * load the program, and then forks a thread to run it.
-	 *
-	 * @param	name	the name of the file containing the executable.
-	 * @param	args	the arguments to pass to the executable.
-	 * @return	<tt>true</tt> if the program was successfully executed.
-	 */
-	public boolean execute(String name, String[] args) {
-		if (!load(name, args))
-			return false;
-
-		new UThread(this).setName(name).fork();
     /**
      * Allocate a new process.
      */
@@ -372,10 +338,10 @@ public class UserProcess {
 	processor.writeRegister(Processor.regPC, initialPC);
 	processor.writeRegister(Processor.regSP, initialSP);
 
-	/**
-	 * Handle the halt() system call. 
-	 */
-	private int handleHalt() {
+	// initialize the first two argument registers to argc and argv
+	processor.writeRegister(Processor.regA0, argc);
+	processor.writeRegister(Processor.regA1, argv);
+    }
 
     /**
      * Handle the halt() system call. 
@@ -550,8 +516,8 @@ public class UserProcess {
     	
     }
     
-	/** The number of pages in the program's stack. */
-	protected final int stackPages = 8;
+    /** The program being run by this process. */
+    protected Coff coff;
 
     /** This process's page table. */
     protected TranslationEntry[] pageTable;
