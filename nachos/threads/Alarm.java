@@ -113,6 +113,7 @@ public class Alarm {
 	/**
 	 * TESTING STUFF
 	 */
+<<<<<<< HEAD
 //	private static class PingTest implements Runnable {
 //		PingTest() {
 //		}
@@ -120,6 +121,18 @@ public class Alarm {
 //			System.out.println("Thread " + KThread.currentThread().getName() + " will ring");
 //		}
 //	}
+=======
+	private static class PingTest implements Runnable {
+		PingTest() {
+		}
+		
+		
+		
+		public void run() {
+			System.out.println("Thread " + KThread.currentThread().getName() + " will ring");
+		}
+	}
+>>>>>>> branch 'master' of https://github.com/yehjeff/NachosThreads.git
 
 //	public static void selfTest() {
 //
