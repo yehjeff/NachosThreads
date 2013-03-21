@@ -163,9 +163,9 @@ public class UserProcess {
 				return length-leftToRead;
 			int PPN = PTE.ppn;
 			if (i == startVPN) 
-				System.arraycopy(memory, PPN+startOffset, data, offset, Math.min(leftToRead, pageSize));
+				System.arraycopy(memory, PPN*pageSize+startOffset, data, offset, Math.min(leftToRead, pageSize));
 			else 
-				System.arraycopy(memory, PPN, data, offset, Math.min(leftToRead, pageSize));
+				System.arraycopy(memory, PPN*pageSize, data, offset, Math.min(leftToRead, pageSize));
 			leftToRead -= Math.min(leftToRead, pageSize);
 			offset += Math.min(leftToRead, pageSize);
 			
@@ -221,9 +221,9 @@ public class UserProcess {
 				return length - leftToWrite; 			
 			int PPN = PTE.ppn;
 			if (i == startVPN)
-				System.arraycopy( data,offset,memory, PPN+startOffset, Math.min(leftToWrite, pageSize));
+				System.arraycopy( data,offset,memory, PPN*pageSize+startOffset, Math.min(leftToWrite, pageSize));
 			else
-				System.arraycopy(data, offset,memory,PPN, Math.min(leftToWrite, pageSize));
+				System.arraycopy(data, offset,memory,PPN*pageSize, Math.min(leftToWrite, pageSize));
 			leftToWrite -= Math.min(leftToWrite, pageSize);
 			offset += Math.min(leftToWrite, pageSize);
 		}
