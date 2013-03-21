@@ -239,7 +239,7 @@ public class PriorityScheduler extends Scheduler {
 		public boolean transferPriority;
 
 		private java.util.PriorityQueue<ThreadState> waitQueue = new java.util.PriorityQueue<ThreadState>();
-		private ThreadState threadWithResource = null;
+		protected ThreadState threadWithResource = null;
 		private long age = 0;
 	}
 
