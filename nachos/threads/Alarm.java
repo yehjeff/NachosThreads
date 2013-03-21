@@ -116,6 +116,9 @@ public class Alarm {
 	private static class PingTest implements Runnable {
 		PingTest() {
 		}
+		
+		
+		
 		public void run() {
 			System.out.println("Thread " + KThread.currentThread().getName() + " will ring");
 		}

@@ -4,6 +4,8 @@ import nachos.machine.*;
 import nachos.threads.*;
 import nachos.userprog.*;
 
+import java.util.LinkedList;
+
 /**
  * A kernel that can support multiple user processes.
  */
@@ -18,9 +20,14 @@ public class UserKernel extends ThreadedKernel {
 	/**
 	 * Initialize this kernel. Creates a synchronized console and sets the
 	 * processor's exception handler.
+	 * 
+	 * PROJ2: added free physical page list initialization
 	 */
 	public void initialize(String[] args) {
 		super.initialize(args);
+		int numPhysPages = Machine.processor().getNumPhysPages();
+		for (int i=0; i<numPhysPages; i++)
+			freePhysicalPages.push(new Integer(i));
 
 		console = new SynchConsole(Machine.console());
 
@@ -114,4 +121,8 @@ public class UserKernel extends ThreadedKernel {
 
 	// dummy variables to make javac smarter
 	private static Coff dummy1 = null;
+	
+	/** PROJ2 Class variables									   */
+	public static LinkedList<Integer> freePhysicalPages;
+	public static Lock freePhysicalPagesLock;
 }
