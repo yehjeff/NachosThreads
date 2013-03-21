@@ -25,12 +25,7 @@ public class UserProcess {
 	 * Allocate a new process.
 	 */
 	public UserProcess() {
-		int numPhysPages = Machine.processor().getNumPhysPages();
-		pageTable = new TranslationEntry[numPhysPages];
-		for (int i=0; i<numPhysPages; i++)
-			pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
-
-
+	
 		processCountLock.acquire();
 		processID = processCount++;
 		processCountLock.release();
@@ -149,46 +144,33 @@ public class UserProcess {
 	 */
 	public int readVirtualMemory(int vaddr, byte[] data, int offset,
 			int length) {
-//		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
-//
-//		addrLegit(vaddr, length);
-//		
-//		byte[] memory = Machine.processor().getMemory();
-//		int startVAddr = vaddr;
-//		int startOffset = vaddr % pageSize;
-//		int endVAddr = Math.min(startVAddr + length, pageTable.length*pageSize);
-//		int startVPN = startVAddr / pageSize;
-//		int endVPN = endVAddr / pageSize;
-//		int totalToRead = endVAddr - startVAddr;
-//		int leftToRead = totalToRead;
-//		
-//		for (int i = startVPN; i <= endVPN; i++){
-//			TranslationEntry PTE = pageTable[i];
-//			if (!PTE.valid)
-//				return length-leftToRead;
-//			int PPN = PTE.ppn;
-//			if (i == startVPN) 
-//				System.arraycopy(memory, PPN+startOffset, data, offset, Math.min(leftToRead, pageSize));
-//			else 
-//				System.arraycopy(memory, PPN, data, offset, Math.min(leftToRead, pageSize));
-//			leftToRead -= Math.min(leftToRead, pageSize);
-//			offset += Math.min(leftToRead, pageSize);
-//			
-//		}
-//		return length;
+		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 
-Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
-
+		addrLegit(vaddr, length);
+		
 		byte[] memory = Machine.processor().getMemory();
-
-		// for now, just assume that virtual addresses equal physical addresses
-		if (vaddr < 0 || vaddr >= memory.length)
-			return 0;
-
-		int amount = Math.min(length, memory.length-vaddr);
-		System.arraycopy(memory, vaddr, data, offset, amount);
-
-		return amount;
+		int startVAddr = vaddr;
+		int startOffset = vaddr % pageSize;
+		int endVAddr = Math.min(startVAddr + length, pageTable.length*pageSize);
+		int startVPN = startVAddr / pageSize;
+		int endVPN = endVAddr / pageSize;
+		int totalToRead = endVAddr - startVAddr;
+		int leftToRead = totalToRead;
+		
+		for (int i = startVPN; i <= endVPN; i++){
+			TranslationEntry PTE = pageTable[i];
+			if (!PTE.valid)
+				return length-leftToRead;
+			int PPN = PTE.ppn;
+			if (i == startVPN) 
+				System.arraycopy(memory, PPN*pageSize+startOffset, data, offset, Math.min(leftToRead, pageSize));
+			else 
+				System.arraycopy(memory, PPN*pageSize, data, offset, Math.min(leftToRead, pageSize));
+			leftToRead -= Math.min(leftToRead, pageSize);
+			offset += Math.min(leftToRead, pageSize);
+			
+		}
+		return length;
 	}
 
 	/**
@@ -221,41 +203,31 @@ Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 	public int writeVirtualMemory(int vaddr, byte[] data, int offset,
 			int length) {
 		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
-//
-//		addrLegit(vaddr, length);
-//		byte[] memory = Machine.processor().getMemory();
-//
-//		int startVAddr = vaddr + offset;
-//		int startOffset = (vaddr + offset) % Processor.pageSize;
-//		int endVAddr = Math.min(startVAddr + length, pageTable.length*pageSize);
-//		int startVPN = startVAddr / pageSize;
-//		int endVPN = endVAddr / pageSize;
-//		int totalToWrite = endVAddr - startVAddr;
-//		int leftToWrite = totalToWrite;
-//
-//		for (int i = startVPN; i <= endVPN; i++){
-//			TranslationEntry PTE = pageTable[i];
-//			if (!PTE.valid || PTE.readOnly)
-//				return length - leftToWrite; 			
-//			int PPN = PTE.ppn;
-//			if (i == startVPN)
-//				System.arraycopy( data,offset,memory, PPN+startOffset, Math.min(leftToWrite, pageSize));
-//			else
-//				System.arraycopy(data, offset,memory,PPN, Math.min(leftToWrite, pageSize));
-//			leftToWrite -= Math.min(leftToWrite, pageSize);
-//			offset += Math.min(leftToWrite, pageSize);
-//		}
-//		return length;
-byte[] memory = Machine.processor().getMemory();
 
-		// for now, just assume that virtual addresses equal physical addresses
-		if (vaddr < 0 || vaddr >= memory.length)
-			return 0;
+		addrLegit(vaddr, length);
+		byte[] memory = Machine.processor().getMemory();
 
-		int amount = Math.min(length, memory.length-vaddr);
-		System.arraycopy(data, offset, memory, vaddr, amount);
+		int startVAddr = vaddr + offset;
+		int startOffset = (vaddr + offset) % Processor.pageSize;
+		int endVAddr = Math.min(startVAddr + length, pageTable.length*pageSize);
+		int startVPN = startVAddr / pageSize;
+		int endVPN = endVAddr / pageSize;
+		int totalToWrite = endVAddr - startVAddr;
+		int leftToWrite = totalToWrite;
 
-		return amount;
+		for (int i = startVPN; i <= endVPN; i++){
+			TranslationEntry PTE = pageTable[i];
+			if (!PTE.valid || PTE.readOnly)
+				return length - leftToWrite; 			
+			int PPN = PTE.ppn;
+			if (i == startVPN)
+				System.arraycopy( data,offset,memory, PPN*pageSize+startOffset, Math.min(leftToWrite, pageSize));
+			else
+				System.arraycopy(data, offset,memory,PPN*pageSize, Math.min(leftToWrite, pageSize));
+			leftToWrite -= Math.min(leftToWrite, pageSize);
+			offset += Math.min(leftToWrite, pageSize);
+		}
+		return length;
 	}
 
 	/**
@@ -264,7 +236,7 @@ byte[] memory = Machine.processor().getMemory();
 	 * its header information, and copies sections and arguments into this
 	 * process's virtual memory.
 	 *
-	 * @param	name	the name of the file containing the executable.
+	 * @param	name	the name of the file containing the executable.q
 	 * @param	args	the arguments to pass to the executable.
 	 * @return	<tt>true</tt> if the executable was successfully loaded.
 	 */
@@ -354,40 +326,54 @@ byte[] memory = Machine.processor().getMemory();
 	 * @return	<tt>true</tt> if the sections were successfully loaded.
 	 */
 	protected boolean loadSections() {
-//		UserKernel.freePhysicalPagesLock.acquire();
-		if (numPages > Machine.processor().getNumPhysPages()) {
+
+		UserKernel.freePhysicalPagesLock.acquire();
+		if (numPages > UserKernel.freePhysicalPages.size()) {
 			coff.close();
-//			UserKernel.freePhysicalPagesLock.release();
+			UserKernel.freePhysicalPagesLock.release();
 			Lib.debug(dbgProcess, "\tinsufficient physical memory");
 			return false;
 		}
 
 		// load sections
-//		pageTable = new TranslationEntry[numPages];
+		int entriesLoadedSoFar = 0;
+		pageTable = new TranslationEntry[numPages];
 		for (int s=0; s<coff.getNumSections(); s++) {
 			CoffSection section = coff.getSection(s);
-			Lib.debug(dbgProcess, "\tinitializing " + section.getName()
-					+ " section (" + section.getLength() + " pages)");
 			for (int i=0; i<section.getLength(); i++) {
 				int vpn = section.getFirstVPN()+i;
-//				int newPPN = UserKernel.freePhysicalPages.pop();
-//				pageTable[vpn] = new TranslationEntry(vpn, newPPN, true, 
-//						section.isReadOnly(), false, false);
-//				section.loadPage(i, newPPN);
+				int newPPN = UserKernel.freePhysicalPages.pop();
+				pageTable[vpn] = new TranslationEntry(vpn, newPPN, true, section.isReadOnly(), false, false);
+				section.loadPage(i, newPPN);
+				entriesLoadedSoFar += 1;
 				
 				// for now, just assume virtual addresses=physical addresses
-				section.loadPage(i, vpn);
+				//section.loadPage(i, vpn);
 			}
 		}
-//		UserKernel.freePhysicalPagesLock.release();
+		for (int i = entriesLoadedSoFar; i < entriesLoadedSoFar + stackPages + 1 ; i++){
+			int vpn = i;
+			int newPPN = UserKernel.freePhysicalPages.pop();
+			pageTable[vpn] = new TranslationEntry(vpn, newPPN, true, false, false, false);
+
+		}
+		UserKernel.freePhysicalPagesLock.release();
 		return true;
-	}
+		}
+		
+	
 
 	/**
 	 * Release any resources allocated by <tt>loadSections()</tt>.
 	 */
 	protected void unloadSections() {
+		for (int i = 0; i < pageTable.length; i++){
+			TranslationEntry entry = pageTable[i];
+			if (entry.valid)
+				UserKernel.freePhysicalPages.add(entry.ppn);
+		}
 	}    
+	
 
 	/**
 	 * Initialize the processor's registers in preparation for running the
@@ -541,11 +527,7 @@ byte[] memory = Machine.processor().getMemory();
 				file.close();
 		}
 		unloadSections();
-		if (this.parentProcess != null){
-			this.parentProcess.childrenExitStatuses.put(this.processID, status);
-			if (this.exitingAbnormally)
-				this.parentProcess.childrenAbnormallyExited.add(this.processID);
-		}
+		
 		numProcessesAliveLock.acquire();
 		numProcessesAlive -= 1;
 
@@ -554,6 +536,11 @@ byte[] memory = Machine.processor().getMemory();
 			Kernel.kernel.terminate();
 		} else {
 			numProcessesAliveLock.release();
+			if (this.parentProcess != null){
+				this.parentProcess.childrenExitStatuses.put(this.processID, status);
+				if (this.exitingAbnormally)
+					this.parentProcess.childrenAbnormallyExited.add(this.processID);
+			}
 			KThread.finish();
 		}
 		return 0;
@@ -595,7 +582,9 @@ byte[] memory = Machine.processor().getMemory();
 					childProcess = process;
 			}
 			childProcess.parentProcess = this;
+			Machine.interrupt().disable();
 			KThread.sleep();
+			Machine.interrupt().enable();
 		}
 
 		childExitStatus = this.childrenExitStatuses.get(processID);
