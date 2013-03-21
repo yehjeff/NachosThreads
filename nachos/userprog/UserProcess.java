@@ -369,8 +369,11 @@ public class UserProcess {
 	protected void unloadSections() {
 		for (int i = 0; i < pageTable.length; i++){
 			TranslationEntry entry = pageTable[i];
+			UserKernel.freePhysicalPagesLock.acquire();
 			if (entry.valid)
 				UserKernel.freePhysicalPages.add(entry.ppn);
+			UserKernel.freePhysicalPagesLock.release();
+
 		}
 	}    
 	
