@@ -26,9 +26,12 @@ public class UserKernel extends ThreadedKernel {
 	public void initialize(String[] args) {
 		super.initialize(args);
 		int numPhysPages = Machine.processor().getNumPhysPages();
+		freePhysicalPages = new LinkedList<Integer>();
+		freePhysicalPagesLock = new Lock();
 		for (int i=0; i<numPhysPages; i++)
 			freePhysicalPages.push(new Integer(i));
-
+			
+		System.out.println("\nnumPhysicalPages = " + freePhysicalPages.size());
 		console = new SynchConsole(Machine.console());
 
 		Machine.processor().setExceptionHandler(new Runnable() {
