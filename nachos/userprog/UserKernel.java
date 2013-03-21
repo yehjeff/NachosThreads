@@ -30,7 +30,6 @@ public class UserKernel extends ThreadedKernel {
 		freePhysicalPagesLock = new Lock();
 		for (int i=0; i<numPhysPages; i++)
 			freePhysicalPages.addLast(new Integer(i));
-
 		console = new SynchConsole(Machine.console());
 
 		Machine.processor().setExceptionHandler(new Runnable() {
