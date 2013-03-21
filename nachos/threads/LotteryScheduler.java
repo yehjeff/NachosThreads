@@ -122,7 +122,7 @@ public class LotteryScheduler extends PriorityScheduler {
     		}
     		this.priority = priority;
     		this.updateEffectivePriority();
-    		for (LotteryThreadState doneeThread : this.doneeList) {
+    		for (ThreadState doneeThread : this.doneeList) {
     			doneeThread.updateEffectivePriority();
     		}
     	}
@@ -142,7 +142,7 @@ public class LotteryScheduler extends PriorityScheduler {
     	
     	public void updateEffectivePriority() {
     		int ticketSum = this.priority;
-    		for (LotteryQueue resourceQueue : this.resourceQueues) {
+    		for (PriorityQueue resourceQueue : this.resourceQueues) {
     			if (resourceQueue.transferPriority) {
     				for (ThreadState threadState : resourceQueue) {
     					ticketSum += threadState.getEffectivePriority();
@@ -158,8 +158,8 @@ public class LotteryScheduler extends PriorityScheduler {
     		
     	}
 
-		protected LinkedList<LotteryThreadState> doneeList = new LinkedList<LotteryThreadState>();
-		protected LinkedList<LotteryQueue> resourceQueues = new LinkedList<LotteryQueue>();
+//		protected LinkedList<LotteryThreadState> doneeList = new LinkedList<LotteryThreadState>();
+//		protected LinkedList<LotteryQueue> resourceQueues = new LinkedList<LotteryQueue>();
     }
     
     /*
