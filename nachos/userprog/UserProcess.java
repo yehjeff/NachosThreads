@@ -64,8 +64,8 @@ public class UserProcess {
 	public boolean execute(String name, String[] args) {
 		if (!load(name, args))
 			return false;
-
-		new UThread(this).setName(name).fork();
+		this.thread = new UThread(this);
+		this.thread.setName(name).fork();
 
 		return true;
 	}
@@ -538,6 +538,7 @@ public class UserProcess {
 			numProcessesAliveLock.release();
 			if (this.parentProcess != null){
 				this.parentProcess.childrenExitStatuses.put(this.processID, status);
+				// somehow wake up the parent
 				if (this.exitingAbnormally)
 					this.parentProcess.childrenAbnormallyExited.add(this.processID);
 			}
@@ -582,9 +583,7 @@ public class UserProcess {
 					childProcess = process;
 			}
 			childProcess.parentProcess = this;
-			Machine.interrupt().disable();
-			KThread.sleep();
-			Machine.interrupt().enable();
+			childProcess.thread.join();
 		}
 
 		childExitStatus = this.childrenExitStatuses.get(processID);
@@ -741,6 +740,7 @@ public class UserProcess {
 	protected HashSet<Integer> childrenAbnormallyExited = new HashSet<Integer>();
 	protected HashSet<UserProcess> childrenProcesses = new HashSet<UserProcess>();
 	protected UserProcess parentProcess = null;
+	protected UThread thread = null;
 	private boolean exitingAbnormally = false;
 	/** This is the process's unique ID. */
 	protected int processID;

@@ -38,7 +38,7 @@ public class LotteryScheduler extends PriorityScheduler {
     
     public static final int priorityMinimum = 1; //or 0 if we need that
     public static final int priorityMaximum = Integer.MAX_VALUE;
-    private static int totalNumberTickets = 0;
+//    private static int totalNumberTickets = 0;
     
     /**
      * Allocate a new lottery thread queue.
@@ -55,13 +55,13 @@ public class LotteryScheduler extends PriorityScheduler {
     protected LotteryThreadState getThreadState(KThread thread) {
   		if (thread.schedulingState == null) {
 			thread.schedulingState = new LotteryThreadState(thread);
-			totalNumberTickets += 1;
+//			totalNumberTickets += 1;
   		}
 		return (LotteryThreadState) thread.schedulingState;
 		//error if totalNumberTickets > INTEGER.MAX_VALUE?
     }
     
-    protected class LotteryQueue extends PriorityQueue {
+    protected class LotteryQueue extends PriorityQueue{
     	
     	LotteryQueue(boolean transferPriority) {
 			super(transferPriority);
@@ -95,12 +95,14 @@ public class LotteryScheduler extends PriorityScheduler {
     			}
     			int randomNumber = (int) (Math.random() * totalTickets); //should range from 0-(totalTickets-1)
     			//WHILE LOOP? ...can it go negative?//////////////////////////////////////////////////////////////
+    			LotteryThreadState nextThreadState = null;
     			for (LotteryThreadState threadState : waitQueue) {
     				if (randomNumber < threadState.getEffectivePriority()) {
-    					return threadState;
+    					nextThreadState = threadState;
     				}
     				randomNumber -= threadState.getEffectivePriority();
     			}
+    			return nextThreadState;
     		}
     		// for loop should find a threadState to return....
     	}
@@ -140,21 +142,18 @@ public class LotteryScheduler extends PriorityScheduler {
     	}
     	
     	public void updateEffectivePriority() {
-    		int ticketSum = this.cachedEffectivePriority; /////////////////////////////////unusused var as of now
+    		int ticketSum = this.priority; /////////////////////////////////unusused var as of now
     		for (LotteryQueue resourceQueue : this.resourceQueues) {
     			if (resourceQueue.transferPriority) {
-    				for (LotteryThreadState threadState : resourceQueue) {
+    				for (ThreadState threadState : resourceQueue) {
     					ticketSum += threadState.getEffectivePriority();
     				}
     			}
     		}
     		
     		//////////////////////////////////////////////we need the below, right?
-    		if (this.priority < maxDonorPriority) //replace this.priority for ticketsum?
-				this.cachedEffectivePriority = maxDonorPriority; //max number tickets == integer.max_value
+				this.cachedEffectivePriority = ticketSum; //max number tickets == integer.max_value
 
-			else 
-				this.cachedEffectivePriority = this.priority;		//again, replace this.priority with this.ticketsum
     		///////////////////////////////
     		
     		for (ThreadState doneeThread : this.doneeList) {

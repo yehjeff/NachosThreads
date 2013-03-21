@@ -21,8 +21,6 @@ int main(int argc, char** argv)
   
   close(fd);
   fd = unlink("sup.txt");
-  printf("%d", fd);
-  printf("hello");
   if (fd == 0) {
      printf("Unlinked sup.txt");
   }
