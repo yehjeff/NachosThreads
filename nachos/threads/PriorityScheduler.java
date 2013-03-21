@@ -238,7 +238,7 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		public boolean transferPriority;
 
-		private java.util.PriorityQueue<ThreadState> waitQueue = new java.util.PriorityQueue<ThreadState>();
+		protected java.util.PriorityQueue<ThreadState> waitQueue = new java.util.PriorityQueue<ThreadState>();
 		protected ThreadState threadWithResource = null;
 		private long age = 0;
 	}
@@ -294,9 +294,9 @@ public class PriorityScheduler extends Scheduler {
 				return;
 			this.priority = priority;
 			this.updateEffectivePriority();
-			for (ThreadState doneeThread : this.doneeList){
-				if (doneeThread.getEffectivePriority() < this.getEffectivePriority()){
-					doneeThread.updateEffectivePriority();
+			if (doneeList != null && doneeList.threadWithResource != null){
+				if (doneeList.threadWithResource.getEffectivePriority() < this.getEffectivePriority()){
+					doneeList.threadWithResource.updateEffectivePriority();
 				}
 			}
 
@@ -331,7 +331,7 @@ public class PriorityScheduler extends Scheduler {
 				if (waitQueue.threadWithResource.getEffectivePriority() < this.getEffectivePriority())
 					//				waitQueue.threadWithResource.cachedEffectivePriority = this.getEffectivePriority();
 					waitQueue.threadWithResource.updateEffectivePriority();		// JUST IN CASE, actually yea kinda need it
-				this.doneeList.add(waitQueue.threadWithResource);
+				this.doneeList = waitQueue;
 			}
 			waitQueue.add(this);
 		}
@@ -353,6 +353,8 @@ public class PriorityScheduler extends Scheduler {
 		public void acquire(PriorityQueue waitQueue) {
 			this.resourceQueues.add(waitQueue);
 			waitQueue.threadWithResource = this;
+			if (doneeList == waitQueue)
+				doneeList = null;
 	//		if (this.doneeList.contains(waitQueue))		//NOT SURE IF NECESSARY
 	//			this.doneeList.remove(waitQueue);		//NOT SURE IF NECESSARY, MAKES NO SENSE
 			this.updateEffectivePriority();
@@ -392,14 +394,11 @@ public class PriorityScheduler extends Scheduler {
 
 			if (this.priority < maxDonorPriority) 
 				this.cachedEffectivePriority = maxDonorPriority;
-
 			else 
-				this.cachedEffectivePriority = this.priority;		
-
-			for (ThreadState doneeThread : this.doneeList){
-				if (doneeThread.getEffectivePriority() < this.getEffectivePriority()){
-					doneeThread.updateEffectivePriority();
-				}
+				this.cachedEffectivePriority = this.priority;	
+			if (this.doneeList != null && this.doneeList.threadWithResource != null){
+				if (this.doneeList.threadWithResource.getEffectivePriority() < this.getEffectivePriority())
+					this.doneeList.threadWithResource.updateEffectivePriority();
 			}
 		}
 
@@ -423,7 +422,7 @@ public class PriorityScheduler extends Scheduler {
 		/** The priority of the associated thread. */
 		protected int priority;
 
-		protected LinkedList<ThreadState> doneeList = new LinkedList<ThreadState>();
+		protected PriorityQueue doneeList = null;
 		protected LinkedList<PriorityQueue> resourceQueues = new LinkedList<PriorityQueue>();
 		private long timeEnqueued;
 		protected int cachedEffectivePriority;
@@ -599,8 +598,7 @@ public class PriorityScheduler extends Scheduler {
 			Machine.interrupt().enable();
 			System.out.println("After call to join: Thread 1's effecive priority: " + threadZeroPriority);
 			for (int i=0; i<5; i++) {
-				System.out.println("*** thread " + which + " looped "
-						+ i + " times");
+				System.out.println("*** thread " + which + " looped " + i + " times");
 				KThread.yield();
 			}
 		}

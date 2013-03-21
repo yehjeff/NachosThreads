@@ -62,6 +62,36 @@ public class LotteryScheduler extends PriorityScheduler {
 		//error if totalNumberTickets > INTEGER.MAX_VALUE?
     }
     
+	public boolean increasePriority() {
+		boolean intStatus = Machine.interrupt().disable();
+
+		KThread thread = KThread.currentThread();
+
+		int priority = getPriority(thread);
+		if (priority == priorityMaximum)
+			return false;
+
+		setPriority(thread, priority+1);
+
+		Machine.interrupt().restore(intStatus);
+		return true;
+	}
+
+	public boolean decreasePriority() {
+		boolean intStatus = Machine.interrupt().disable();
+
+		KThread thread = KThread.currentThread();
+
+		int priority = getPriority(thread);
+		if (priority == priorityMinimum)
+			return false;
+
+		setPriority(thread, priority-1);
+
+		Machine.interrupt().restore(intStatus);
+		return true;
+	}
+    
     protected class LotteryQueue extends PriorityQueue{
     	
     	LotteryQueue(boolean transferPriority) {
@@ -81,6 +111,7 @@ public class LotteryScheduler extends PriorityScheduler {
     		}
 
     		threadWithResource = pickNextThread();
+    		this.waitQueue.remove(threadWithResource);
     		threadWithResource.acquire(this);
     		return threadWithResource.thread;
     	}
@@ -90,14 +121,15 @@ public class LotteryScheduler extends PriorityScheduler {
     			return null;
     		} else {
     			int totalTickets = 0;
-    			for (LotteryThreadState threadState : waitQueue) {
+    			for (ThreadState threadState : waitQueue) {
     				totalTickets += threadState.getEffectivePriority();
     			}
     			int randomNumber = (int) (Math.random() * totalTickets); //should range from 0-(totalTickets-1)
     			LotteryThreadState nextThreadState = null;
-    			for (LotteryThreadState threadState : waitQueue) {
+    			for (ThreadState threadState : waitQueue) {
     				if (randomNumber < threadState.getEffectivePriority()) {
-    					nextThreadState = threadState;
+    					nextThreadState = (LotteryThreadState) threadState;
+    					break;
     				}
     				randomNumber -= threadState.getEffectivePriority();
     			}
@@ -106,7 +138,7 @@ public class LotteryScheduler extends PriorityScheduler {
     		// for loop should find a threadState to return....
     	}
 
-    	protected LinkedList<LotteryThreadState> waitQueue = new LinkedList<LotteryThreadState>();
+    	//protected LinkedList<LotteryThreadState> waitQueue = new LinkedList<LotteryThreadState>();
 		//protected LotteryThreadState threadWithResource = null;
     }
     
@@ -122,9 +154,8 @@ public class LotteryScheduler extends PriorityScheduler {
     		}
     		this.priority = priority;
     		this.updateEffectivePriority();
-    		for (ThreadState doneeThread : this.doneeList) {
-    			doneeThread.updateEffectivePriority();
-    		}
+    		if (this.doneeList != null && this.doneeList.threadWithResource != null)
+    			this.doneeList.threadWithResource.updateEffectivePriority();
     	}
     	
     	public void waitForAccess(PriorityQueue waitQueue) {
@@ -135,7 +166,7 @@ public class LotteryScheduler extends PriorityScheduler {
     		}
     		if (waitQueue.threadWithResource != null) { 
     			waitQueue.threadWithResource.updateEffectivePriority();
-    			this.doneeList.add(waitQueue.threadWithResource);
+    			this.doneeList = waitQueue;
     		}
     		waitQueue.add(this);
     	}
@@ -152,9 +183,8 @@ public class LotteryScheduler extends PriorityScheduler {
     		
     		this.cachedEffectivePriority = ticketSum;
     		
-    		for (ThreadState doneeThread : this.doneeList) {
-    			doneeThread.updateEffectivePriority();
-    		}
+    		if (this.doneeList != null && this.doneeList.threadWithResource != null)
+    			this.doneeList.threadWithResource.updateEffectivePriority();
     		
     	}
 
@@ -166,9 +196,10 @@ public class LotteryScheduler extends PriorityScheduler {
     public static void selfTest() {
     	System.out.println("\n Entering PriorityScheduler.selfTest()");
 		KThread currentThread = KThread.currentThread();
-
+		
 		int threadZeroPriority;
 		int threadOnePriority;
+		ThreadedKernel.scheduler.decreasePriority();	
 
 
 		System.out.println("\nTesting thread priority (no donation):");
@@ -184,7 +215,7 @@ public class LotteryScheduler extends PriorityScheduler {
 		newThread.fork();
 		new PingTest(0).run();
 		newThread.join();
-		
+		System.out.println("hi");
 		/*
 		System.out.println("\nTesting thread priority (no donation):");
 		System.out.println("Thread 0's priority higher than Thread 1 (calls increasePriority())");

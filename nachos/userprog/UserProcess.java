@@ -752,10 +752,6 @@ public class UserProcess {
 	/** The number of free file slots this process has in fileArray. */
 	protected int numFreeFileDesc;
 
-	/*3. parent hold  2 hashmaps matches  child's PID with exit status and PID with abnormal exit flag
-3. numprocessesalive should be == 0, not 1 in handleExit() [OK]
-3. handleExit(): have some sort of flag for abnormal exit ?   
-3. handleExec(): check the arguments first before initalizing the user processes [just swap?] yis
-	 */
+	
 
 }
