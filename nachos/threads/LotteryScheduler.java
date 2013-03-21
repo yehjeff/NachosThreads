@@ -107,7 +107,7 @@ public class LotteryScheduler extends PriorityScheduler {
     	}
 
     	protected LinkedList<LotteryThreadState> waitQueue = new LinkedList<LotteryThreadState>();
-		protected LotteryThreadState threadWithResource = null;
+		//protected LotteryThreadState threadWithResource = null;
     }
     
     protected class LotteryThreadState extends ThreadState { 
@@ -127,7 +127,7 @@ public class LotteryScheduler extends PriorityScheduler {
     		}
     	}
     	
-    	public void waitForAccess(LotteryQueue waitQueue) {
+    	public void waitForAccess(PriorityQueue waitQueue) {
     		if (waitQueue.threadWithResource == this) {
     		  waitQueue.threadWithResource.resourceQueues.remove(waitQueue);
     		  waitQueue.threadWithResource.updateEffectivePriority();
@@ -162,7 +162,7 @@ public class LotteryScheduler extends PriorityScheduler {
 //		protected LinkedList<LotteryQueue> resourceQueues = new LinkedList<LotteryQueue>();
     }
     
-    /*
+    
     public static void selfTest() {
     	System.out.println("\n Entering PriorityScheduler.selfTest()");
 		KThread currentThread = KThread.currentThread();
@@ -184,6 +184,24 @@ public class LotteryScheduler extends PriorityScheduler {
 		newThread.fork();
 		new PingTest(0).run();
 		newThread.join();
+		
+		/*
+		System.out.println("\nTesting thread priority (no donation):");
+		System.out.println("Thread 0's priority higher than Thread 1 (calls increasePriority())");
+		ThreadedKernel.scheduler.increasePriority();
+		Machine.interrupt().disable();
+		threadZeroPriority = ThreadedKernel.scheduler.getEffectivePriority(currentThread);
+		threadOnePriority = ThreadedKernel.scheduler.getEffectivePriority(newThread);
+		Machine.interrupt().enable();
+		System.out.println("Thread 0's effecive priority: " + threadZeroPriority);
+		System.out.println("Thread 1's effective priority: " + threadOnePriority);
+		newThread = new KThread(new PingTest(1));
+		newThread.setName("forked thread");
+		newThread.fork();
+		new PingTest(0).run();
+		newThread.join();
+		ThreadedKernel.scheduler.decreasePriority(); // reset them to equal priorities
+		*/
     }
-    */
+    
 }
