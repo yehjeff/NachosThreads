@@ -521,11 +521,7 @@ public class UserProcess {
 				file.close();
 		}
 		unloadSections();
-		if (this.parentProcess != null){
-			this.parentProcess.childrenExitStatuses.put(this.processID, status);
-			if (this.exitingAbnormally)
-				this.parentProcess.childrenAbnormallyExited.add(this.processID);
-		}
+		
 		numProcessesAliveLock.acquire();
 		numProcessesAlive -= 1;
 
@@ -534,6 +530,11 @@ public class UserProcess {
 			Kernel.kernel.terminate();
 		} else {
 			numProcessesAliveLock.release();
+			if (this.parentProcess != null){
+				this.parentProcess.childrenExitStatuses.put(this.processID, status);
+				if (this.exitingAbnormally)
+					this.parentProcess.childrenAbnormallyExited.add(this.processID);
+			}
 			KThread.finish();
 		}
 		return 0;
@@ -575,7 +576,9 @@ public class UserProcess {
 					childProcess = process;
 			}
 			childProcess.parentProcess = this;
+			Machine.interrupt().disable();
 			KThread.sleep();
+			Machine.interrupt().enable();
 		}
 
 		childExitStatus = this.childrenExitStatuses.get(processID);
