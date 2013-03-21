@@ -1,6 +1,7 @@
 package nachos.threads;
 
 import nachos.machine.*;
+import nachos.threads.PriorityScheduler.PriorityQueue;
 import nachos.threads.PriorityScheduler.ThreadState;
 
 import java.util.LinkedList;
@@ -37,6 +38,7 @@ public class LotteryScheduler extends PriorityScheduler {
     
     public static final int priorityMinimum = 1; //or 0 if we need that
     public static final int priorityMaximum = Integer.MAX_VALUE;
+    private static int totalNumberTickets = 0;
     
     /**
      * Allocate a new lottery thread queue.
@@ -50,27 +52,28 @@ public class LotteryScheduler extends PriorityScheduler {
     	return new LotteryQueue(transferPriority);
     }
     
-    protected ThreadState getThreadState(KThread thread) {
+    protected LotteryThreadState getThreadState(KThread thread) {
   		if (thread.schedulingState == null) {
-			thread.schedulingState = new ThreadState(thread);
+			thread.schedulingState = new LotteryThreadState(thread);
 			totalNumberTickets += 1;
   		}
-		return (ThreadState) thread.schedulingState;
+		return (LotteryThreadState) thread.schedulingState;
 		//error if totalNumberTickets > INTEGER.MAX_VALUE?
     }
     
     protected class LotteryQueue extends PriorityQueue {
-    	LotteryQueue(boolean transferPriority) {
-			this.transferPriority = transferPriority;
-		}
     	
-    	public KThread nextThread() {
+    	LotteryQueue(boolean transferPriority) {
+			super(transferPriority);
+		}
+
+		public KThread nextThread() {
     		Lib.assertTrue(Machine.interrupt().disabled());
     		if (threadWithResource != null) {
-    			ThreadState previousThreadWithResource = threadWithResource;
+    			LotteryThreadState previousThreadWithResource = (LotteryThreadState) threadWithResource;
     			threadWithResource = null;
     			previousThreadWithResource.resourceQueues.remove(this);
-    			previousThreadWithResource.updateEffectivePriority();			// this is important, cuz now he doesnt have lock so less donations
+    			previousThreadWithResource.updateEffectivePriority();			// this is important, cuz now he doesn't have lock so less donations
     		}
     		if (waitQueue.isEmpty()) {
     			return null;
@@ -81,17 +84,19 @@ public class LotteryScheduler extends PriorityScheduler {
     		return threadWithResource.thread;
     	}
     	
-    	protected ThreadState pickNextThread() {
+    	protected LotteryThreadState pickNextThread() {
     		if (waitQueue.isEmpty()) {
     			return null;
     		} else {
     			int totalTickets = 0;
-    			for (ThreadState threadState : waitQueue) {
+    			//what about totalNumberTickets?///////////////////////////////////////////////////////////////
+    			for (LotteryThreadState threadState : waitQueue) {
     				totalTickets += threadState.getEffectivePriority();
     			}
-    			int randomNumber = rand(0, totalTickets-1);	//????
-    			for (ThreadState threadState : waitQueue) {
-    				if randomNumber < threadState.getEffectivePriority() {
+    			int randomNumber = (int) (Math.random() * totalTickets); //should range from 0-(totalTickets-1)
+    			//WHILE LOOP? ...can it go negative?//////////////////////////////////////////////////////////////
+    			for (LotteryThreadState threadState : waitQueue) {
+    				if (randomNumber < threadState.getEffectivePriority()) {
     					return threadState;
     				}
     				randomNumber -= threadState.getEffectivePriority();
@@ -100,24 +105,28 @@ public class LotteryScheduler extends PriorityScheduler {
     		// for loop should find a threadState to return....
     	}
 
-    	
-    	//private LinkedList<ThreadState> waitQueue = new LinkedList<ThreadState>(); //shouldnt this get extended?
-    	//private boolean transferPriority; //shouldnt this get extended?
+    	protected java.util.PriorityQueue<LotteryThreadState> waitQueue = new java.util.PriorityQueue<LotteryThreadState>();
+		protected LotteryThreadState threadWithResource = null;
     }
     
     protected class LotteryThreadState extends ThreadState { //how do i do this? not sure..., do i need to extend in the extension?
+    	
+    	public LotteryThreadState(KThread thread) {
+    		super(thread);
+    	}
+    	
     	public void setPriority(int priority) {
     		if (this.priority == priority) {
     			return;
     		}
     		this.priority = priority;
     		this.updateEffectivePriority();
-    		for (ThreadState doneeThread : this.doneeList) {
+    		for (LotteryThreadState doneeThread : this.doneeList) {
     			doneeThread.updateEffectivePriority();
     		}
     	}
     	
-    	public void waitForAccess(PriorityQueue waitQueue) {
+    	public void waitForAccess(LotteryQueue waitQueue) {
     		if (waitQueue.threadWithResource == this) {
     		  waitQueue.threadWithResource.resourceQueues.remove(waitQueue);
     		  waitQueue.threadWithResource.updateEffectivePriority();
@@ -131,21 +140,31 @@ public class LotteryScheduler extends PriorityScheduler {
     	}
     	
     	public void updateEffectivePriority() {
-    		int ticketSum = this.cachedEffectivePriority();
-    		for (PriorityQueue resourceQueue : this.resourceQueues) {
+    		int ticketSum = this.cachedEffectivePriority; /////////////////////////////////unusused var as of now
+    		for (LotteryQueue resourceQueue : this.resourceQueues) {
     			if (resourceQueue.transferPriority) {
-    				for (ThreadState threadState : resourceQueue) {
+    				for (LotteryThreadState threadState : resourceQueue) {
     					ticketSum += threadState.getEffectivePriority();
     				}
     			}
     		}
+    		
+    		//////////////////////////////////////////////we need the below, right?
+    		if (this.priority < maxDonorPriority) //replace this.priority for ticketsum?
+				this.cachedEffectivePriority = maxDonorPriority; //max number tickets == integer.max_value
+
+			else 
+				this.cachedEffectivePriority = this.priority;		//again, replace this.priority with this.ticketsum
+    		///////////////////////////////
+    		
     		for (ThreadState doneeThread : this.doneeList) {
     			doneeThread.updateEffectivePriority();
     		}
+    		
+    	}
 
-
-    	
-    	
+		protected LinkedList<LotteryThreadState> doneeList = new LinkedList<LotteryThreadState>();
+		protected LinkedList<LotteryQueue> resourceQueues = new LinkedList<LotteryQueue>();
     }
     
 }
