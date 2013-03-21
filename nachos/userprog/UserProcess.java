@@ -572,7 +572,7 @@ public class UserProcess {
 		}
 		if (filename.length() < 6 ||  filename.substring(filename.length()-5) == ".coff") //file name has to end with .coff
 			return -1;
-		UserProcess child = newUserProcess();
+		UserProcess child = new UserProcess();
 		this.childrenExitStatuses.put(child.processID, null);
 		this.childrenProcesses.add(child);
 		child.parentProcess = this;
