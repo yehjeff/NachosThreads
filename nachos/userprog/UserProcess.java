@@ -399,6 +399,15 @@ public class UserProcess {
 	 * Release any resources allocated by <tt>loadSections()</tt>.
 	 */
 	protected void unloadSections() {
+		for (OpenFile file : fileArray){
+			if (file != null)
+				file.close();
+		}
+		for (int i = 0; i < pageTable.length; i++){
+			TranslationEntry entry = pageTable[i];
+			if (entry.valid)
+				UserKernel.freePhysicalPages.add(entry.ppn);
+		}
 	}    
 
 	/**
