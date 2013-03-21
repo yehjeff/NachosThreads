@@ -25,11 +25,6 @@ public class UserProcess {
 	 * Allocate a new process.
 	 */
 	public UserProcess() {
-		int numPhysPages = Machine.processor().getNumPhysPages();
-		pageTable = new TranslationEntry[numPhysPages];
-		for (int i=0; i<numPhysPages; i++)
-			pageTable[i] = new TranslationEntry(i,i, true,false,false,false);
-
 
 		processCountLock.acquire();
 		processID = processCount++;
@@ -270,7 +265,7 @@ public class UserProcess {
 	 * its header information, and copies sections and arguments into this
 	 * process's virtual memory.
 	 *
-	 * @param	name	the name of the file containing the executable.
+	 * @param	name	the name of the file containing the executable.q
 	 * @param	args	the arguments to pass to the executable.
 	 * @return	<tt>true</tt> if the executable was successfully loaded.
 	 */
@@ -360,11 +355,10 @@ public class UserProcess {
 	 * @return	<tt>true</tt> if the sections were successfully loaded.
 	 */
 	protected boolean loadSections() {
+
 		UserKernel.freePhysicalPagesLock.acquire();
-		System.out.println("\nnumPages = " + numPages);
-		System.out.println("\nfreePhysicalPages = " + UserKernel.freePhysicalPages.size());
+
 		if (numPages > UserKernel.freePhysicalPages.size()) {
-		//if (numPages > Machine.processor().getNumPhysPages()) {
 			coff.close();
 			UserKernel.freePhysicalPagesLock.release();
 			Lib.debug(dbgProcess, "\tinsufficient physical memory");
@@ -372,27 +366,34 @@ public class UserProcess {
 		}
 
 		// load sections
-		System.out.println("\nLoading sections");
-		//pageTable = new TranslationEntry[numPages];
+
+		int entriesLoadedSoFar = 0;
+		pageTable = new TranslationEntry[numPages];
 		for (int s=0; s<coff.getNumSections(); s++) {
 			CoffSection section = coff.getSection(s);
-			//Lib.debug(dbgProcess, "\tinitializing " + section.getName()
-				//	+ " section (" + section.getLength() + " pages)");
 			for (int i=0; i<section.getLength(); i++) {
 				int vpn = section.getFirstVPN()+i;
 				int newPPN = UserKernel.freePhysicalPages.pop();
-				pageTable[vpn] = new TranslationEntry(vpn, newPPN, true, 
-						section.isReadOnly(), false, false);
+				pageTable[vpn] = new TranslationEntry(vpn, newPPN, true, section.isReadOnly(), false, false);
 				section.loadPage(i, newPPN);
+				entriesLoadedSoFar += 1;
 				
 				// for now, just assume virtual addresses=physical addresses
 				//section.loadPage(i, vpn);
 			}
 		}
 
+		for (int i = entriesLoadedSoFar; i < entriesLoadedSoFar + stackPages + 1 ; i++){
+			int vpn = i;
+			int newPPN = UserKernel.freePhysicalPages.pop();
+			pageTable[vpn] = new TranslationEntry(vpn, newPPN, true, false, false, false);
+
+		}
 		UserKernel.freePhysicalPagesLock.release();
 		return true;
-	}
+		}
+		
+	
 
 	/**
 	 * Release any resources allocated by <tt>loadSections()</tt>.
@@ -504,7 +505,7 @@ public class UserProcess {
 			default:
 				Lib.debug(dbgProcess, "Unknown syscall " + syscall);
 				//			Lib.assertNotReached("Unknown system call!");
-				this.exitingAbnormally = true;					// is this correct?
+				this.exitingAbnormally = true;					// is this correct? idk
 				handleExit(-1);
 			}
 		} catch (Exception e) {
@@ -571,7 +572,7 @@ public class UserProcess {
 	}
 
 	private int handleExec(int filenameAddr, int argc, int argv){
-		if (argc < 0 || filenameAddr < 0){
+		if (argc < 0 || filenameAddr < 0 ){
 			return -1;
 		}
 		String filename = readVirtualMemoryString(filenameAddr, 255);
@@ -724,7 +725,7 @@ public class UserProcess {
 	 * @return	<tt>true</tt> if the address can be read correctly.
 	 */
 	private boolean addrLegit(int addr, int count) {
-		if (addr + count <= pageTable.length * pageSize && addr > 0) {
+		if (addr + count <= pageTable.length * pageSize && addr > 0) {		// are we supposed to assume address cant be 0? 
 			return true;
 		} else {
 			handleExit(-2);
