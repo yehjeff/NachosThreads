@@ -146,7 +146,10 @@ public class UserProcess {
 			int length) {
 		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 
-		addrLegit(vaddr, length);
+		if (!addrLegit(vaddr, length)){
+			this.exitingAbnormally = true;
+			handleExit(-2);
+		}
 		
 		byte[] memory = Machine.processor().getMemory();
 		int startVAddr = vaddr;
@@ -204,7 +207,10 @@ public class UserProcess {
 			int length) {
 		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 
-		addrLegit(vaddr, length);
+		if (!addrLegit(vaddr, length)){
+			this.exitingAbnormally = true;
+			handleExit(-2);
+		}
 		byte[] memory = Machine.processor().getMemory();
 
 		int startVAddr = vaddr + offset;
@@ -486,7 +492,7 @@ public class UserProcess {
 				handleExit(-1);
 			}
 		} catch (Exception e) {
-			handleExit(-1);
+			return -1;
 		}
 		return 0;
 	}
@@ -705,13 +711,7 @@ public class UserProcess {
 	 * @return	<tt>true</tt> if the address can be read correctly.
 	 */
 	private boolean addrLegit(int addr, int count) {
-		if (addr + count <= pageTable.length * pageSize && addr > 0) {		// are we supposed to assume address cant be 0? 
-			return true;
-		} else {
-			handleExit(-2);
-			Lib.assertNotReached("Failed to exit on illegal address");
-		}
-		return false;
+		return (addr + count <= pageTable.length * pageSize && addr > 0) ;
 	}
 
 	/** The program being run by this process. */
