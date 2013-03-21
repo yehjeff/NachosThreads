@@ -38,3 +38,6 @@
 /Alarm$PingTest.class
 /Communicator$ListenerTest.class
 /Communicator$SpeakerTest.class
+/LotteryScheduler$LotteryQueue.class
+/LotteryScheduler$LotteryThreadState.class
+/LotteryThreadState.class
