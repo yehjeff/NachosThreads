@@ -562,7 +562,7 @@ public class PriorityScheduler extends Scheduler {
 
 
 	}
-	private static class JoinTest implements Runnable {
+	protected static class JoinTest implements Runnable {
 		JoinTest(int which){
 			this.which = which;
 		}
@@ -587,7 +587,7 @@ public class PriorityScheduler extends Scheduler {
 		}
 		private int which;
 	}
-	private static class PingTest implements Runnable {
+	protected static class PingTest implements Runnable {
 		PingTest(int which) {
 			this.which = which;
 		}

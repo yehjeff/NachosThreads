@@ -1,6 +1,7 @@
 package nachos.threads;
 
 import nachos.machine.*;
+import nachos.threads.PriorityScheduler.PingTest;
 import nachos.threads.PriorityScheduler.PriorityQueue;
 import nachos.threads.PriorityScheduler.ThreadState;
 
@@ -89,12 +90,10 @@ public class LotteryScheduler extends PriorityScheduler {
     			return null;
     		} else {
     			int totalTickets = 0;
-    			//what about totalNumberTickets?///////////////////////////////////////////////////////////////
     			for (LotteryThreadState threadState : waitQueue) {
     				totalTickets += threadState.getEffectivePriority();
     			}
     			int randomNumber = (int) (Math.random() * totalTickets); //should range from 0-(totalTickets-1)
-    			//WHILE LOOP? ...can it go negative?//////////////////////////////////////////////////////////////
     			LotteryThreadState nextThreadState = null;
     			for (LotteryThreadState threadState : waitQueue) {
     				if (randomNumber < threadState.getEffectivePriority()) {
@@ -107,11 +106,11 @@ public class LotteryScheduler extends PriorityScheduler {
     		// for loop should find a threadState to return....
     	}
 
-    	protected java.util.PriorityQueue<LotteryThreadState> waitQueue = new java.util.PriorityQueue<LotteryThreadState>();
+    	protected LinkedList<LotteryThreadState> waitQueue = new LinkedList<LotteryThreadState>();
 		protected LotteryThreadState threadWithResource = null;
     }
     
-    protected class LotteryThreadState extends ThreadState { //how do i do this? not sure..., do i need to extend in the extension?
+    protected class LotteryThreadState extends ThreadState { 
     	
     	public LotteryThreadState(KThread thread) {
     		super(thread);
@@ -142,7 +141,7 @@ public class LotteryScheduler extends PriorityScheduler {
     	}
     	
     	public void updateEffectivePriority() {
-    		int ticketSum = this.priority; /////////////////////////////////unusused var as of now
+    		int ticketSum = this.priority;
     		for (LotteryQueue resourceQueue : this.resourceQueues) {
     			if (resourceQueue.transferPriority) {
     				for (ThreadState threadState : resourceQueue) {
@@ -151,10 +150,7 @@ public class LotteryScheduler extends PriorityScheduler {
     			}
     		}
     		
-    		//////////////////////////////////////////////we need the below, right?
-				this.cachedEffectivePriority = ticketSum; //max number tickets == integer.max_value
-
-    		///////////////////////////////
+    		this.cachedEffectivePriority = ticketSum;
     		
     		for (ThreadState doneeThread : this.doneeList) {
     			doneeThread.updateEffectivePriority();
@@ -166,4 +162,28 @@ public class LotteryScheduler extends PriorityScheduler {
 		protected LinkedList<LotteryQueue> resourceQueues = new LinkedList<LotteryQueue>();
     }
     
+    /*
+    public static void selfTest() {
+    	System.out.println("\n Entering PriorityScheduler.selfTest()");
+		KThread currentThread = KThread.currentThread();
+
+		int threadZeroPriority;
+		int threadOnePriority;
+
+
+		System.out.println("\nTesting thread priority (no donation):");
+		System.out.println("Thread 0's priority same as  Thread 1");
+		KThread newThread = new KThread(new PingTest(1));
+		Machine.interrupt().disable();
+		threadZeroPriority = ThreadedKernel.scheduler.getEffectivePriority(currentThread);
+		threadOnePriority = ThreadedKernel.scheduler.getEffectivePriority(newThread);
+		Machine.interrupt().enable();
+		System.out.println("Thread 0's effecive priority: " + threadZeroPriority);
+		System.out.println("Thread 1's effective priority: " + threadOnePriority);
+		newThread.setName("forked thread");
+		newThread.fork();
+		new PingTest(0).run();
+		newThread.join();
+    }
+    */
 }
