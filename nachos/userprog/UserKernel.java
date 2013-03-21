@@ -25,9 +25,11 @@ public class UserKernel extends ThreadedKernel {
 	 */
 	public void initialize(String[] args) {
 		super.initialize(args);
-		int numPhysPages = Machine.processor().getNumPhysPages();
-		for (int i=0; i<numPhysPages; i++)
-			freePhysicalPages.push(new Integer(i));
+//		int numPhysPages = Machine.processor().getNumPhysPages();
+//		freePhysicalPages = new LinkedList<Integer>();
+//		freePhysicalPagesLock = new Lock();
+//		for (int i=0; i<numPhysPages; i++)
+//			freePhysicalPages.push(new Integer(i));
 
 		console = new SynchConsole(Machine.console());
 
@@ -123,6 +125,6 @@ public class UserKernel extends ThreadedKernel {
 	private static Coff dummy1 = null;
 	
 	/** PROJ2 Class variables									   */
-	public static LinkedList<Integer> freePhysicalPages;
-	public static Lock freePhysicalPagesLock;
+//	public static LinkedList<Integer> freePhysicalPages;
+//	public static Lock freePhysicalPagesLock;
 }
