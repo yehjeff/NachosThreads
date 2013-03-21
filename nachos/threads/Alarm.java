@@ -78,7 +78,7 @@ public class Alarm {
 
 
 	/**
-	 * PUT COMMENTS HERE
+	 * Private 
 	 */
 	private class ThreadAndTime<KThread,Long> implements Comparable<ThreadAndTime<KThread,Long>> {
 		public KThread thread;
@@ -108,14 +108,17 @@ public class Alarm {
 	 * waitingThreads: a queue of KThreads to keep track of the threads waiting on the condition
 	 */
 	private java.util.PriorityQueue<ThreadAndTime<KThread,Long>> waitingThreads;
-	
-	
+
+
 	/**
 	 * TESTING STUFF
 	 */
 	private static class PingTest implements Runnable {
 		PingTest() {
 		}
+		
+		
+		
 		public void run() {
 			System.out.println("Thread " + KThread.currentThread().getName() + " will ring");
 		}
@@ -125,16 +128,16 @@ public class Alarm {
 
 		System.out.println("\n Entering Alarm.selfTest()");
 		Alarm alarm = new Alarm();
-		
+
 		System.out.println("\nTesting 1 thread for 1 second");
 		alarm.waitUntil(1);
 
 		System.out.println("\nTesting 1 thread for 10 seconds");
 		alarm.waitUntil(10);
-		
+
 		System.out.println("\nTesting 1 thread for 1000 seconds");
 		alarm.waitUntil(1000);
-		
+
 		System.out.println("\nTesting 2 threads for various times");
 		KThread wakeUp1 = new KThread(new PingTest()).setName("wakeUp1");
 		wakeUp1.fork();
@@ -146,8 +149,8 @@ public class Alarm {
 		alarm.waitUntil(10000);
 		alarm.waitUntil(700);
 		alarm.waitUntil(1500);
-		
+
 		System.out.println("\n Finished testing Alarm.java");
 	}
-	
+
 }

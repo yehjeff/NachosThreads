@@ -39,28 +39,20 @@ public class Communicator {
     
     // Version 1
     public void speak(int word) {
-    	//System.out.println("\nStarting " + KThread.currentThread().getName());
     	communicatorLock.acquire();
     	speakerNotSentCount++;
     	while (listenerNotPairedCount == 0 || speakerHasConfirmed) { // a 2nd speaker can screw over the first speaker, how to prevent?
-    		//if (listenerConfirmation) break;
-    		//System.out.println("\n" + KThread.currentThread().getName() + " wakes up in while loop");
     		speakerWaiting.sleep();
     	}
-    	//System.out.println("Current running speaker that will set the word is " + KThread.currentThread().getName());
     	speakerHasConfirmed = true;
     	listenerWaiting.wake();
     	listenerNotPairedCount--;
     	wordToSend = word;
-    	//speakerNotConfirmed = true;// moved to listener to correctly set 1st confirmed speaker
-    	//System.out.println("Setting the word to: " + wordToSend);
     	speakerConfirmed.sleep();
-    	//System.out.println("Speaker waking 2nd time");
     	speakerHasConfirmed = false; //when we hand over to the next speaker why set speakerNotConfirmed to false, just leave it
     	if (speakerNotSentCount > 0)
     		speakerWaiting.wake();
     	communicatorLock.release();
-    //	System.out.println("returning from speaker");
     }
 
     /**
@@ -70,27 +62,19 @@ public class Communicator {
      * @return	the integer transferred.
      */    
     public int listen() {
-    	//System.out.println("\n" + KThread.currentThread().getName() + " is waking up");
     	communicatorLock.acquire();
     	listenerNotPairedCount++;
     	if (speakerNotSentCount > 0 && !speakerHasConfirmed && listenerConfirmation == false) {
-    		//speakerNotConfirmed = true; // moved here from speak()
-    		//System.out.println("waking up a speaker");
     		speakerWaiting.wake();
     		speakerNotSentCount--;
     		listenerConfirmation = true; // we don't want a 2nd listener waking up a 2nd speaker.
     										// can this break other things? 
     										// as long as the 2nd listener comes after a speaker or a
-    		//listenerNotPairedCount--;
-    	}
-    	
-    	
+    	}   	
     	listenerWaiting.sleep();
-    	//System.out.println("\nThe word to send is: " + wordToSend + "\n");
     	int temp = wordToSend; 	
     	speakerConfirmed.wake();
     	communicatorLock.release();
-    	//System.out.println("returning from listener");
     	return temp;
     }
     
@@ -308,5 +292,4 @@ public class Communicator {
     private Condition2 speakerWaiting;
     private Condition2 listenerWaiting;
     private Condition2 speakerConfirmed;
-    private KThread pairedSpeaker = null;
 }
