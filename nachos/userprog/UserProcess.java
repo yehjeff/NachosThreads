@@ -473,7 +473,7 @@ public class UserProcess {
 			default:
 				Lib.debug(dbgProcess, "Unknown syscall " + syscall);
 				//			Lib.assertNotReached("Unknown system call!");
-				this.exitingAbnormally = true;					// is this correct?
+				this.exitingAbnormally = true;					// is this correct? idk
 				handleExit(-1);
 			}
 		} catch (Exception e) {
