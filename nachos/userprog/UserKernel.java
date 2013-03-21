@@ -26,8 +26,10 @@ public class UserKernel extends ThreadedKernel {
 	public void initialize(String[] args) {
 		super.initialize(args);
 		int numPhysPages = Machine.processor().getNumPhysPages();
+		freePhysicalPages = new LinkedList<Integer>();
+		freePhysicalPagesLock = new Lock();
 		for (int i=0; i<numPhysPages; i++)
-			freePhysicalPages.push(new Integer(i));
+			freePhysicalPages.addLast(new Integer(i));
 
 		console = new SynchConsole(Machine.console());
 
@@ -102,7 +104,7 @@ public class UserKernel extends ThreadedKernel {
 		UserProcess process = UserProcess.newUserProcess();
 
 		String shellProgram = Machine.getShellProgramName();	
-//		System.out.println(shellProgram);
+	//	System.out.println(shellProgram);
 		String[] commandLineArguments = Machine.getCommandLineArguments();
 		Lib.assertTrue(process.execute(shellProgram, commandLineArguments ));
 
