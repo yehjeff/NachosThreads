@@ -515,6 +515,7 @@ public class UserProcess {
 		default:
 			Lib.debug(dbgProcess, "Unexpected exception: " + Processor.exceptionNames[cause]);
 			this.exitingAbnormally = true;
+			System.out.println("hi");
 			handleExit(162);
 			Lib.assertNotReached("Unexpected exception");
 		}
@@ -591,9 +592,9 @@ public class UserProcess {
 		byte[] statusByte = Lib.bytesFromInt(childExitStatus);
 		writeVirtualMemory(statusAddr,statusByte,0,4);
 		if (this.childrenAbnormallyExited.contains(processID))
-			return -1;
-		else
 			return 0;
+		else
+			return 1;
 	}
 
 	private int handleCreate(int stringAddr) {
