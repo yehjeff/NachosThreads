@@ -145,8 +145,7 @@ public class UserProcess {
 	public int readVirtualMemory(int vaddr, byte[] data, int offset,
 			int length) {
 		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
-		
-		/*
+
 		addrLegit(vaddr, length);
 		
 		byte[] memory = Machine.processor().getMemory();
@@ -172,18 +171,6 @@ public class UserProcess {
 			
 		}
 		return length;
-		*/
-
-		byte[] memory = Machine.processor().getMemory();
-	    // for now, just assume that virtual addresses equal physical addresses
-	    if (vaddr < 0 || vaddr >= memory.length)
-	      return 0;
-	
-	    int amount = Math.min(length, memory.length-vaddr);
-	    System.arraycopy(memory, vaddr, data, offset, amount);
-	
-	    return amount;
-	    
 	}
 
 	/**
@@ -215,14 +202,11 @@ public class UserProcess {
 	 */
 	public int writeVirtualMemory(int vaddr, byte[] data, int offset,
 			int length) {
-		//System.out.println("\nWriting virtual memory...");
 		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 
-		
-		//addrLegit(vaddr, length);
+		addrLegit(vaddr, length);
 		byte[] memory = Machine.processor().getMemory();
 
-		/*
 		int startVAddr = vaddr + offset;
 		int startOffset = (vaddr + offset) % Processor.pageSize;
 		int endVAddr = Math.min(startVAddr + length, pageTable.length*pageSize);
@@ -233,10 +217,8 @@ public class UserProcess {
 
 		for (int i = startVPN; i <= endVPN; i++){
 			TranslationEntry PTE = pageTable[i];
-			if (!PTE.valid || PTE.readOnly) {
-				System.out.println("\nInvalid page table entry");
+			if (!PTE.valid || PTE.readOnly)
 				return length - leftToWrite; 			
-			}
 			int PPN = PTE.ppn;
 			if (i == startVPN)
 				System.arraycopy( data,offset,memory, PPN*pageSize+startOffset, Math.min(leftToWrite, pageSize));
@@ -245,18 +227,7 @@ public class UserProcess {
 			leftToWrite -= Math.min(leftToWrite, pageSize);
 			offset += Math.min(leftToWrite, pageSize);
 		}
-		System.out.println("\nNum bytes transfered: " + length);
 		return length;
-		*/
-		
-		// for now, just assume that virtual addresses equal physical addresses
-		    if (vaddr < 0 || vaddr >= memory.length)
-		      return 0;
-		
-		    int amount = Math.min(length, memory.length-vaddr);
-		    System.arraycopy(data, offset, memory, vaddr, amount);
-		
-		    return amount;
 	}
 
 	/**
@@ -322,7 +293,7 @@ public class UserProcess {
 
 		// and finally reserve 1 page for arguments
 		numPages++;
-		
+
 		if (!loadSections())
 			return false;
 
@@ -343,7 +314,7 @@ public class UserProcess {
 			Lib.assertTrue(writeVirtualMemory(stringOffset,new byte[] { 0 }) == 1);
 			stringOffset += 1;
 		}
-		System.out.println("\nLoad successful");
+
 		return true;
 	}
 
@@ -357,7 +328,6 @@ public class UserProcess {
 	protected boolean loadSections() {
 
 		UserKernel.freePhysicalPagesLock.acquire();
-
 		if (numPages > UserKernel.freePhysicalPages.size()) {
 			coff.close();
 			UserKernel.freePhysicalPagesLock.release();
@@ -366,7 +336,6 @@ public class UserProcess {
 		}
 
 		// load sections
-
 		int entriesLoadedSoFar = 0;
 		pageTable = new TranslationEntry[numPages];
 		for (int s=0; s<coff.getNumSections(); s++) {
@@ -382,7 +351,6 @@ public class UserProcess {
 				//section.loadPage(i, vpn);
 			}
 		}
-
 		for (int i = entriesLoadedSoFar; i < entriesLoadedSoFar + stackPages + 1 ; i++){
 			int vpn = i;
 			int newPPN = UserKernel.freePhysicalPages.pop();
@@ -399,16 +367,13 @@ public class UserProcess {
 	 * Release any resources allocated by <tt>loadSections()</tt>.
 	 */
 	protected void unloadSections() {
-		for (OpenFile file : fileArray){
-			if (file != null)
-				file.close();
-		}
 		for (int i = 0; i < pageTable.length; i++){
 			TranslationEntry entry = pageTable[i];
 			if (entry.valid)
 				UserKernel.freePhysicalPages.add(entry.ppn);
 		}
 	}    
+	
 
 	/**
 	 * Initialize the processor's registers in preparation for running the
