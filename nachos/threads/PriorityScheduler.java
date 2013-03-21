@@ -238,8 +238,8 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		public boolean transferPriority;
 
-		private java.util.PriorityQueue<ThreadState> waitQueue = new java.util.PriorityQueue<ThreadState>();
-		private ThreadState threadWithResource = null;
+		protected java.util.PriorityQueue<ThreadState> waitQueue = new java.util.PriorityQueue<ThreadState>();
+		protected ThreadState threadWithResource = null;
 		private long age = 0;
 	}
 
@@ -423,10 +423,10 @@ public class PriorityScheduler extends Scheduler {
 		/** The priority of the associated thread. */
 		protected int priority;
 
-		private LinkedList<ThreadState> doneeList = new LinkedList<ThreadState>();
-		private LinkedList<PriorityQueue> resourceQueues = new LinkedList<PriorityQueue>();
+		protected LinkedList<ThreadState> doneeList = new LinkedList<ThreadState>();
+		protected LinkedList<PriorityQueue> resourceQueues = new LinkedList<PriorityQueue>();
 		private long timeEnqueued;
-		private int cachedEffectivePriority;
+		protected int cachedEffectivePriority;
 	}
 	/*
 	 * 
