@@ -357,6 +357,7 @@ public class UserProcess {
 				//section.loadPage(i, vpn);
 			}
 		}
+		// load the rest (argument page and stack pages)
 		for (int i = entriesLoadedSoFar; i < entriesLoadedSoFar + stackPages + 1 ; i++){
 			int vpn = i;
 			int newPPN = UserKernel.freePhysicalPages.pop();
@@ -373,14 +374,13 @@ public class UserProcess {
 	 * Release any resources allocated by <tt>loadSections()</tt>.
 	 */
 	protected void unloadSections() {
+		UserKernel.freePhysicalPagesLock.acquire();
 		for (int i = 0; i < pageTable.length; i++){
 			TranslationEntry entry = pageTable[i];
-			UserKernel.freePhysicalPagesLock.acquire();
 			if (entry.valid)
 				UserKernel.freePhysicalPages.add(entry.ppn);
-			UserKernel.freePhysicalPagesLock.release();
-
 		}
+		UserKernel.freePhysicalPagesLock.release();
 	}    
 	
 
@@ -548,7 +548,6 @@ public class UserProcess {
 			numProcessesAliveLock.release();
 			if (this.parentProcess != null){
 				this.parentProcess.childrenExitStatuses.put(this.processID, status);
-				// somehow wake up the parent
 				if (this.exitingAbnormally)
 					this.parentProcess.childrenAbnormallyExited.add(this.processID);
 			}
@@ -558,7 +557,7 @@ public class UserProcess {
 	}
 
 	private int handleExec(int filenameAddr, int argc, int argv){
-		if (argc < 0 || filenameAddr < 0 ){
+		if (argc < 0 || !addrLegit(filenameAddr, 256) ){
 			return -1;
 		}
 		String filename = readVirtualMemoryString(filenameAddr, 255);
@@ -583,7 +582,7 @@ public class UserProcess {
 	}
 
 	private int handleJoin(int processID, int statusAddr){
-		if (!this.childrenExitStatuses.containsKey(processID) || statusAddr < 0)
+		if (!this.childrenExitStatuses.containsKey(processID) || !addrLegit(statusAddr,4))
 			return -1;
 		Integer childExitStatus = childrenExitStatuses.get(processID);
 		UserProcess childProcess = null;
@@ -629,7 +628,7 @@ public class UserProcess {
 	}
 
 	private int handleRead(int fd, int bufferAddr, int size) {
-		if (fd < 0 || bufferAddr < 0 || size < 0 || fileArray[fd]==null	|| !addrLegit(bufferAddr, size))
+		if (fd < 0 || size < 0 || fileArray[fd]==null	|| !addrLegit(bufferAddr, size))
 			return -1;
 		OpenFile file = fileArray[fd];			
 		byte[] buffer = new byte[pageSize];
@@ -711,7 +710,7 @@ public class UserProcess {
 	 * @return	<tt>true</tt> if the address can be read correctly.
 	 */
 	private boolean addrLegit(int addr, int count) {
-		return (addr + count <= pageTable.length * pageSize && addr > 0) ;
+		return (addr + count <= pageTable.length * pageSize && addr >= 0) ;	
 	}
 
 	/** The program being run by this process. */
