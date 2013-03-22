@@ -597,7 +597,7 @@ public class PriorityScheduler extends Scheduler {
 			int threadOnePriority = ThreadedKernel.scheduler.getEffectivePriority(KThread.currentThread());
 			Machine.interrupt().enable();
 			System.out.println("After call to join: Thread 1's effecive priority: " + threadZeroPriority);
-			for (int i=0; i<5; i++) {
+			for (int i=0; i<50; i++) {
 				System.out.println("*** thread " + which + " looped " + i + " times");
 				KThread.yield();
 			}

@@ -61,7 +61,14 @@ public class LotteryScheduler extends PriorityScheduler {
 		return (LotteryThreadState) thread.schedulingState;
 		//error if totalNumberTickets > INTEGER.MAX_VALUE?
     }
-    
+	public void setPriority(KThread thread, int priority) {
+		Lib.assertTrue(Machine.interrupt().disabled());
+
+		Lib.assertTrue(priority >= priorityMinimum &&
+				priority <= priorityMaximum);
+
+		getThreadState(thread).setPriority(priority);
+	}
 	public boolean increasePriority() {
 		boolean intStatus = Machine.interrupt().disable();
 
@@ -200,6 +207,10 @@ public class LotteryScheduler extends PriorityScheduler {
 		int threadZeroPriority;
 		int threadOnePriority;
 		ThreadedKernel.scheduler.decreasePriority();	
+		ThreadedKernel.scheduler.increasePriority();	
+		ThreadedKernel.scheduler.increasePriority();	
+		ThreadedKernel.scheduler.increasePriority();	
+		
 
 
 		System.out.println("\nTesting thread priority (no donation):");
