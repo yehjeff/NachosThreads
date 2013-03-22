@@ -12,6 +12,7 @@ int main(int argc, char** argv)
   char buf2[BUFSIZE];
   
   fd = open("sup.txt");
+  printf("sup.txt was opened and put in fd %d\n", fd);
   amount = read(fd, buf2, BUFSIZE);
   write(1, buf2, amount);
   

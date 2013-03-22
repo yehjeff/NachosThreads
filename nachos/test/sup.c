@@ -10,15 +10,16 @@ int main(int argc, char** argv)
 {
   int fd, amount;
 
-  fd = creat("hey.txt");
-  printf("hey.txt was created\n");
+  fd = creat("sup.txt");
+  printf("sup.txt was created and put in fd %d\n", fd);
 
-  buf[0] = 'h';
-  buf[1] = 'e';
-  buf[2] = 'y';
+  buf[0] = 's';
+  buf[1] = 'u';
+  buf[2] = 'p';
   
   write(fd, buf, 3);
   close(fd);
+  printf("Closed fd %d\n", fd);
 
   return 0; 
 }

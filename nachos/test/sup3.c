@@ -11,7 +11,9 @@ int main(int argc, char** argv)
   int fd;
   
   fd = open("sup.txt");  
+  printf("sup.txt was opened and put in fd %d\n", fd);
   close(fd);
+  printf("Closed fd %d\n", fd);
   fd = unlink("sup.txt");
   if (fd == 0) {
      printf("Unlinked sup.txt\n");

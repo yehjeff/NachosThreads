@@ -9,21 +9,23 @@ char buf[BUFSIZE];
 
 int main(int argc, char** argv)
 {
-  int fd, amount;
+  int fd1, fd2, amount;
   char buf2[BUFSIZE];
   
-  fd = creat("sup.txt");
-  printf("sup.txt was created\n");
-  buf[0] = 's';
-  buf[1] = 'u';
-  buf[2] = 'p';
-  write(fd, buf, 3);
+  fd1 = creat("hey.txt");
+  buf[0] = 'h';
+  buf[1] = 'e';
+  buf[2] = 'y';
+  write(fd1, buf2, 3);
+  amount = read(fd1, buf, BUFSIZE);
+  write(1, buf, amount);
   
-  close(fd);
-  fd = unlink("sup.txt");
-  if (fd == 0) {
-     printf("Unlinked sup.txt");
-  }
+  fd2 = creat("hey.txt");
+  amount = read(fd2, buf, BUFSIZE);
+  write(1, buf, amount);
+  
+  int closed1 = close(fd1);
+  int closed2 = close(fd2);
 
   return 0; 
 }

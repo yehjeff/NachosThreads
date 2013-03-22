@@ -11,7 +11,7 @@ int main(int argc, char** argv)
   int fd, amount;
 
   fd = creat("hey.txt");
-  printf("hey.txt was created\n");
+  printf("hey.txt was created and put in %d\n", fd);
 
   buf[0] = 'h';
   buf[1] = 'e';
@@ -19,6 +19,7 @@ int main(int argc, char** argv)
   
   write(fd, buf, 3);
   close(fd);
+  printf("Closed fd %d\n", fd);
 
   return 0; 
 }

@@ -524,7 +524,6 @@ public class UserProcess {
 		default:
 			Lib.debug(dbgProcess, "Unexpected exception: " + Processor.exceptionNames[cause]);
 			this.exitingAbnormally = true;
-			System.out.println("hi");
 			handleExit(162);
 			Lib.assertNotReached("Unexpected exception");
 		}
