@@ -25,7 +25,7 @@ public class UserProcess {
 	 * Allocate a new process.
 	 */
 	public UserProcess() {
-
+	
 		processCountLock.acquire();
 		processID = processCount++;
 		processCountLock.release();
@@ -64,8 +64,8 @@ public class UserProcess {
 	public boolean execute(String name, String[] args) {
 		if (!load(name, args))
 			return false;
-
-		new UThread(this).setName(name).fork();
+		this.thread = new UThread(this);
+		this.thread.setName(name).fork();
 
 		return true;
 	}
@@ -146,7 +146,10 @@ public class UserProcess {
 			int length) {
 		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 
-		addrLegit(vaddr, length);
+		if (!addrLegit(vaddr, length)){
+			this.exitingAbnormally = true;
+			handleExit(-2);
+		}
 		
 		byte[] memory = Machine.processor().getMemory();
 		int startVAddr = vaddr;
@@ -166,6 +169,7 @@ public class UserProcess {
 				System.arraycopy(memory, PPN*pageSize+startOffset, data, offset, Math.min(leftToRead, pageSize));
 			else 
 				System.arraycopy(memory, PPN*pageSize, data, offset, Math.min(leftToRead, pageSize));
+			PTE.used = true;
 			leftToRead -= Math.min(leftToRead, pageSize);
 			offset += Math.min(leftToRead, pageSize);
 			
@@ -204,7 +208,10 @@ public class UserProcess {
 			int length) {
 		Lib.assertTrue(offset >= 0 && length >= 0 && offset+length <= data.length);
 
-		addrLegit(vaddr, length);
+		if (!addrLegit(vaddr, length)){
+			this.exitingAbnormally = true;
+			handleExit(-2);
+		}
 		byte[] memory = Machine.processor().getMemory();
 
 		int startVAddr = vaddr + offset;
@@ -224,6 +231,8 @@ public class UserProcess {
 				System.arraycopy( data,offset,memory, PPN*pageSize+startOffset, Math.min(leftToWrite, pageSize));
 			else
 				System.arraycopy(data, offset,memory,PPN*pageSize, Math.min(leftToWrite, pageSize));
+			PTE.dirty = true;
+			PTE.used = true;
 			leftToWrite -= Math.min(leftToWrite, pageSize);
 			offset += Math.min(leftToWrite, pageSize);
 		}
@@ -351,6 +360,7 @@ public class UserProcess {
 				//section.loadPage(i, vpn);
 			}
 		}
+		// load the rest (argument page and stack pages)
 		for (int i = entriesLoadedSoFar; i < entriesLoadedSoFar + stackPages + 1 ; i++){
 			int vpn = i;
 			int newPPN = UserKernel.freePhysicalPages.pop();
@@ -367,11 +377,13 @@ public class UserProcess {
 	 * Release any resources allocated by <tt>loadSections()</tt>.
 	 */
 	protected void unloadSections() {
+		UserKernel.freePhysicalPagesLock.acquire();
 		for (int i = 0; i < pageTable.length; i++){
 			TranslationEntry entry = pageTable[i];
 			if (entry.valid)
 				UserKernel.freePhysicalPages.add(entry.ppn);
 		}
+		UserKernel.freePhysicalPagesLock.release();
 	}    
 	
 
@@ -483,7 +495,7 @@ public class UserProcess {
 				handleExit(-1);
 			}
 		} catch (Exception e) {
-			handleExit(-1);
+			return -1;
 		}
 		return 0;
 	}
@@ -547,7 +559,7 @@ public class UserProcess {
 	}
 
 	private int handleExec(int filenameAddr, int argc, int argv){
-		if (argc < 0 || filenameAddr < 0 ){
+		if (argc < 0 || !addrLegit(filenameAddr, 256) ){
 			return -1;
 		}
 		String filename = readVirtualMemoryString(filenameAddr, 255);
@@ -561,7 +573,7 @@ public class UserProcess {
 		}
 		if (filename.length() < 6 ||  filename.substring(filename.length()-5) == ".coff") //file name has to end with .coff
 			return -1;
-		UserProcess child = newUserProcess();
+		UserProcess child = new UserProcess();
 		this.childrenExitStatuses.put(child.processID, null);
 		this.childrenProcesses.add(child);
 		child.parentProcess = this;
@@ -572,7 +584,7 @@ public class UserProcess {
 	}
 
 	private int handleJoin(int processID, int statusAddr){
-		if (!this.childrenExitStatuses.containsKey(processID) || statusAddr < 0)
+		if (!this.childrenExitStatuses.containsKey(processID) || !addrLegit(statusAddr,4))
 			return -1;
 		Integer childExitStatus = childrenExitStatuses.get(processID);
 		UserProcess childProcess = null;
@@ -582,9 +594,7 @@ public class UserProcess {
 					childProcess = process;
 			}
 			childProcess.parentProcess = this;
-			Machine.interrupt().disable();
-			KThread.sleep();
-			Machine.interrupt().enable();
+			childProcess.thread.join();
 		}
 
 		childExitStatus = this.childrenExitStatuses.get(processID);
@@ -592,9 +602,9 @@ public class UserProcess {
 		byte[] statusByte = Lib.bytesFromInt(childExitStatus);
 		writeVirtualMemory(statusAddr,statusByte,0,4);
 		if (this.childrenAbnormallyExited.contains(processID))
-			return -1;
-		else
 			return 0;
+		else
+			return 1;
 	}
 
 	private int handleCreate(int stringAddr) {
@@ -620,7 +630,7 @@ public class UserProcess {
 	}
 
 	private int handleRead(int fd, int bufferAddr, int size) {
-		if (fd < 0 || bufferAddr < 0 || size < 0 || fileArray[fd]==null	|| !addrLegit(bufferAddr, size))
+		if (fd < 0 || size < 0 || fileArray[fd]==null	|| !addrLegit(bufferAddr, size))
 			return -1;
 		OpenFile file = fileArray[fd];			
 		byte[] buffer = new byte[pageSize];
@@ -702,13 +712,7 @@ public class UserProcess {
 	 * @return	<tt>true</tt> if the address can be read correctly.
 	 */
 	private boolean addrLegit(int addr, int count) {
-		if (addr + count <= pageTable.length * pageSize && addr > 0) {		// are we supposed to assume address cant be 0? 
-			return true;
-		} else {
-			handleExit(-2);
-			Lib.assertNotReached("Failed to exit on illegal address");
-		}
-		return false;
+		return (addr + count <= pageTable.length * pageSize && addr >= 0) ;	
 	}
 
 	/** The program being run by this process. */
@@ -741,6 +745,7 @@ public class UserProcess {
 	protected HashSet<Integer> childrenAbnormallyExited = new HashSet<Integer>();
 	protected HashSet<UserProcess> childrenProcesses = new HashSet<UserProcess>();
 	protected UserProcess parentProcess = null;
+	protected UThread thread = null;
 	private boolean exitingAbnormally = false;
 	/** This is the process's unique ID. */
 	protected int processID;
@@ -749,10 +754,6 @@ public class UserProcess {
 	/** The number of free file slots this process has in fileArray. */
 	protected int numFreeFileDesc;
 
-	/*3. parent hold  2 hashmaps matches  child's PID with exit status and PID with abnormal exit flag
-3. numprocessesalive should be == 0, not 1 in handleExit() [OK]
-3. handleExit(): have some sort of flag for abnormal exit ?   
-3. handleExec(): check the arguments first before initalizing the user processes [just swap?] yis
-	 */
+	
 
 }

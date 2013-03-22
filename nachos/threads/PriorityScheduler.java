@@ -238,8 +238,8 @@ public class PriorityScheduler extends Scheduler {
 		 */
 		public boolean transferPriority;
 
-		private java.util.PriorityQueue<ThreadState> waitQueue = new java.util.PriorityQueue<ThreadState>();
-		private ThreadState threadWithResource = null;
+		protected java.util.PriorityQueue<ThreadState> waitQueue = new java.util.PriorityQueue<ThreadState>();
+		protected ThreadState threadWithResource = null;
 		private long age = 0;
 	}
 
@@ -294,9 +294,9 @@ public class PriorityScheduler extends Scheduler {
 				return;
 			this.priority = priority;
 			this.updateEffectivePriority();
-			for (ThreadState doneeThread : this.doneeList){
-				if (doneeThread.getEffectivePriority() < this.getEffectivePriority()){
-					doneeThread.updateEffectivePriority();
+			if (doneeList != null && doneeList.threadWithResource != null){
+				if (doneeList.threadWithResource.getEffectivePriority() < this.getEffectivePriority()){
+					doneeList.threadWithResource.updateEffectivePriority();
 				}
 			}
 
@@ -331,7 +331,7 @@ public class PriorityScheduler extends Scheduler {
 				if (waitQueue.threadWithResource.getEffectivePriority() < this.getEffectivePriority())
 					//				waitQueue.threadWithResource.cachedEffectivePriority = this.getEffectivePriority();
 					waitQueue.threadWithResource.updateEffectivePriority();		// JUST IN CASE, actually yea kinda need it
-				this.doneeList.add(waitQueue.threadWithResource);
+				this.doneeList = waitQueue;
 			}
 			waitQueue.add(this);
 		}
@@ -353,6 +353,8 @@ public class PriorityScheduler extends Scheduler {
 		public void acquire(PriorityQueue waitQueue) {
 			this.resourceQueues.add(waitQueue);
 			waitQueue.threadWithResource = this;
+			if (doneeList == waitQueue)
+				doneeList = null;
 	//		if (this.doneeList.contains(waitQueue))		//NOT SURE IF NECESSARY
 	//			this.doneeList.remove(waitQueue);		//NOT SURE IF NECESSARY, MAKES NO SENSE
 			this.updateEffectivePriority();
@@ -392,14 +394,11 @@ public class PriorityScheduler extends Scheduler {
 
 			if (this.priority < maxDonorPriority) 
 				this.cachedEffectivePriority = maxDonorPriority;
-
 			else 
-				this.cachedEffectivePriority = this.priority;		
-
-			for (ThreadState doneeThread : this.doneeList){
-				if (doneeThread.getEffectivePriority() < this.getEffectivePriority()){
-					doneeThread.updateEffectivePriority();
-				}
+				this.cachedEffectivePriority = this.priority;	
+			if (this.doneeList != null && this.doneeList.threadWithResource != null){
+				if (this.doneeList.threadWithResource.getEffectivePriority() < this.getEffectivePriority())
+					this.doneeList.threadWithResource.updateEffectivePriority();
 			}
 		}
 
@@ -423,10 +422,10 @@ public class PriorityScheduler extends Scheduler {
 		/** The priority of the associated thread. */
 		protected int priority;
 
-		private LinkedList<ThreadState> doneeList = new LinkedList<ThreadState>();
-		private LinkedList<PriorityQueue> resourceQueues = new LinkedList<PriorityQueue>();
+		protected PriorityQueue doneeList = null;
+		protected LinkedList<PriorityQueue> resourceQueues = new LinkedList<PriorityQueue>();
 		private long timeEnqueued;
-		private int cachedEffectivePriority;
+		protected int cachedEffectivePriority;
 	}
 	/*
 	 * 
@@ -562,7 +561,7 @@ public class PriorityScheduler extends Scheduler {
 
 
 	}
-	private static class JoinTest implements Runnable {
+	protected static class JoinTest implements Runnable {
 		JoinTest(int which){
 			this.which = which;
 		}
@@ -587,7 +586,7 @@ public class PriorityScheduler extends Scheduler {
 		}
 		private int which;
 	}
-	private static class PingTest implements Runnable {
+	protected static class PingTest implements Runnable {
 		PingTest(int which) {
 			this.which = which;
 		}
@@ -598,9 +597,19 @@ public class PriorityScheduler extends Scheduler {
 			int threadOnePriority = ThreadedKernel.scheduler.getEffectivePriority(KThread.currentThread());
 			Machine.interrupt().enable();
 			System.out.println("After call to join: Thread 1's effecive priority: " + threadZeroPriority);
-			for (int i=0; i<5; i++) {
-				System.out.println("*** thread " + which + " looped "
-						+ i + " times");
+			for (int i=0; i<pingTestLoops; i++) {
+				System.out.println("*** thread " + which + " looped " + i + " times");
+				if ((which == 1) && (onedone == false)) {
+					slowCount = i;
+				}
+				if (i == pingTestLoops-1) {
+					if (onedone) {
+						System.out.println("the other thread finished (" + pingTestLoops + " loops) after the lower priority thread loooped " + slowCount + " times");
+					}
+					else {
+						onedone = true;
+					}
+				}
 				KThread.yield();
 			}
 		}
@@ -608,5 +617,9 @@ public class PriorityScheduler extends Scheduler {
 		private int which;
 	}
 
+	//global variables used only for testing
+	protected static int pingTestLoops = 10;
+	protected static boolean onedone = false; //marks if one of the threads have finished
+	protected static int slowCount = 0; //marks the loop iteration of the slower thread
 
 }
