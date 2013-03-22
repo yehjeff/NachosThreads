@@ -169,6 +169,7 @@ public class UserProcess {
 				System.arraycopy(memory, PPN*pageSize+startOffset, data, offset, Math.min(leftToRead, pageSize));
 			else 
 				System.arraycopy(memory, PPN*pageSize, data, offset, Math.min(leftToRead, pageSize));
+			PTE.used = true;
 			leftToRead -= Math.min(leftToRead, pageSize);
 			offset += Math.min(leftToRead, pageSize);
 			
@@ -230,6 +231,8 @@ public class UserProcess {
 				System.arraycopy( data,offset,memory, PPN*pageSize+startOffset, Math.min(leftToWrite, pageSize));
 			else
 				System.arraycopy(data, offset,memory,PPN*pageSize, Math.min(leftToWrite, pageSize));
+			PTE.dirty = true;
+			PTE.used = true;
 			leftToWrite -= Math.min(leftToWrite, pageSize);
 			offset += Math.min(leftToWrite, pageSize);
 		}

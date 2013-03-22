@@ -597,8 +597,19 @@ public class PriorityScheduler extends Scheduler {
 			int threadOnePriority = ThreadedKernel.scheduler.getEffectivePriority(KThread.currentThread());
 			Machine.interrupt().enable();
 			System.out.println("After call to join: Thread 1's effecive priority: " + threadZeroPriority);
-			for (int i=0; i<5; i++) {
+			for (int i=0; i<pingTestLoops; i++) {
 				System.out.println("*** thread " + which + " looped " + i + " times");
+				if ((which == 1) && (onedone == false)) {
+					slowCount = i;
+				}
+				if (i == pingTestLoops-1) {
+					if (onedone) {
+						System.out.println("the other thread finished (" + pingTestLoops + " loops) after the lower priority thread loooped " + slowCount + " times");
+					}
+					else {
+						onedone = true;
+					}
+				}
 				KThread.yield();
 			}
 		}
@@ -606,5 +617,9 @@ public class PriorityScheduler extends Scheduler {
 		private int which;
 	}
 
+	//global variables used only for testing
+	protected static int pingTestLoops = 10;
+	protected static boolean onedone = false; //marks if one of the threads have finished
+	protected static int slowCount = 0; //marks the loop iteration of the slower thread
 
 }

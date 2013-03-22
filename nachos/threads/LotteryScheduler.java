@@ -1,6 +1,7 @@
 package nachos.threads;
 
 import nachos.machine.*;
+import nachos.threads.PriorityScheduler.JoinTest;
 import nachos.threads.PriorityScheduler.PingTest;
 import nachos.threads.PriorityScheduler.PriorityQueue;
 import nachos.threads.PriorityScheduler.ThreadState;
@@ -61,7 +62,14 @@ public class LotteryScheduler extends PriorityScheduler {
 		return (LotteryThreadState) thread.schedulingState;
 		//error if totalNumberTickets > INTEGER.MAX_VALUE?
     }
-    
+	public void setPriority(KThread thread, int priority) {
+		Lib.assertTrue(Machine.interrupt().disabled());
+
+		Lib.assertTrue(priority >= priorityMinimum &&
+				priority <= priorityMaximum);
+
+		getThreadState(thread).setPriority(priority);
+	}
 	public boolean increasePriority() {
 		boolean intStatus = Machine.interrupt().disable();
 
@@ -194,17 +202,31 @@ public class LotteryScheduler extends PriorityScheduler {
     
     
     public static void selfTest() {
+    	//modify variables in priority scheduler's self-test to dictate how many times you want each cycle to loop.
+    	
     	System.out.println("\n Entering PriorityScheduler.selfTest()");
 		KThread currentThread = KThread.currentThread();
 		
+		KThread newThread;
 		int threadZeroPriority;
 		int threadOnePriority;
-		ThreadedKernel.scheduler.decreasePriority();	
-
-
+		
+		/*
+		ThreadedKernel.scheduler.increasePriority();	
+		ThreadedKernel.scheduler.increasePriority();	
+		ThreadedKernel.scheduler.increasePriority();	
+		ThreadedKernel.scheduler.increasePriority();
+		ThreadedKernel.scheduler.increasePriority();
+		ThreadedKernel.scheduler.increasePriority();
+		ThreadedKernel.scheduler.increasePriority();
+		ThreadedKernel.scheduler.increasePriority();
+		ThreadedKernel.scheduler.increasePriority();
+		*/
+		
+		/*
 		System.out.println("\nTesting thread priority (no donation):");
 		System.out.println("Thread 0's priority same as  Thread 1");
-		KThread newThread = new KThread(new PingTest(1));
+		newThread = new KThread(new PingTest(1));
 		Machine.interrupt().disable();
 		threadZeroPriority = ThreadedKernel.scheduler.getEffectivePriority(currentThread);
 		threadOnePriority = ThreadedKernel.scheduler.getEffectivePriority(newThread);
@@ -215,11 +237,14 @@ public class LotteryScheduler extends PriorityScheduler {
 		newThread.fork();
 		new PingTest(0).run();
 		newThread.join();
-		System.out.println("hi");
+		*/
+		
 		/*
 		System.out.println("\nTesting thread priority (no donation):");
 		System.out.println("Thread 0's priority higher than Thread 1 (calls increasePriority())");
 		ThreadedKernel.scheduler.increasePriority();
+		ThreadedKernel.scheduler.increasePriority();
+		ThreadedKernel.scheduler.increasePriority(); // has 4 tickets now, so 4/5 chance for thread 0 to be picked
 		Machine.interrupt().disable();
 		threadZeroPriority = ThreadedKernel.scheduler.getEffectivePriority(currentThread);
 		threadOnePriority = ThreadedKernel.scheduler.getEffectivePriority(newThread);
@@ -232,6 +257,81 @@ public class LotteryScheduler extends PriorityScheduler {
 		new PingTest(0).run();
 		newThread.join();
 		ThreadedKernel.scheduler.decreasePriority(); // reset them to equal priorities
+		ThreadedKernel.scheduler.decreasePriority();
+		ThreadedKernel.scheduler.decreasePriority();
+		*/
+		
+		/*
+		System.out.println("\nTesting thread priority donation with joins:");
+		System.out.println("Thread 0's priority higher than Thread 1");
+		System.out.println("but Thread 0 calls join on Thread 1");
+		newThread = new KThread(new PingTest(1));
+		ThreadedKernel.scheduler.increasePriority();
+		Machine.interrupt().disable();
+		threadZeroPriority = ThreadedKernel.scheduler.getEffectivePriority(currentThread);
+		threadOnePriority = ThreadedKernel.scheduler.getEffectivePriority(newThread);
+		Machine.interrupt().enable();
+		System.out.println("Before call to join: Thread 0's effecive priority: " + threadZeroPriority);
+		System.out.println("\t\tThread 1's effective priority: " + threadOnePriority);
+		newThread.setName("forked thread");
+		newThread.fork();
+		newThread.join();
+		Machine.interrupt().disable();
+		threadZeroPriority = ThreadedKernel.scheduler.getEffectivePriority(currentThread);
+		threadOnePriority = ThreadedKernel.scheduler.getEffectivePriority(newThread);
+		Machine.interrupt().enable();
+		System.out.println("After call to join: Thread 0's effecive priority: " + threadZeroPriority);
+		System.out.println("\t\tThread 1's effective priority: " + threadOnePriority);
+		ThreadedKernel.scheduler.decreasePriority(); // reset them to equal priorities
+		new PingTest(0).run();
+		*/
+		
+		/*
+		System.out.println("\nTesting thread priority donation with joins:");
+		System.out.println("Thread 0's priority same as Thread 1");
+		System.out.println("but Thread 0 calls join on Thread 1");
+		newThread = new KThread(new PingTest(1));
+		//ThreadedKernel.scheduler.decreasePriority();
+		Machine.interrupt().disable();
+		threadZeroPriority = ThreadedKernel.scheduler.getEffectivePriority(currentThread);
+		threadOnePriority = ThreadedKernel.scheduler.getEffectivePriority(newThread);
+		Machine.interrupt().enable();
+		System.out.println("Before call to join: Thread 0's effecive priority: " + threadZeroPriority);
+		System.out.println("\t\tThread 1's effective priority: " + threadOnePriority); //should sum now, not max
+		newThread.setName("forked thread");
+		newThread.fork();
+		newThread.join();
+		new PingTest(0).run();
+		Machine.interrupt().disable();
+		threadZeroPriority = ThreadedKernel.scheduler.getEffectivePriority(currentThread);
+		threadOnePriority = ThreadedKernel.scheduler.getEffectivePriority(newThread);
+		Machine.interrupt().enable();
+		System.out.println("After call to join: Thread 0's effecive priority: " + threadZeroPriority);
+		System.out.println("\t\tThread 1's effective priority: " + threadOnePriority);
+		ThreadedKernel.scheduler.increasePriority(); // reset them to equal priorities
+		*/
+		
+		/*
+		System.out.println("\nTesting transitive thread priority donation with joins:");
+		System.out.println("Thread 0's priority higher than Thread 1 which is higher than Thread 2 ");
+		System.out.println("but Thread 0 has lock and Thread 1 waiting for lock");
+		newThread = new KThread(new JoinTest(1));
+		newThread.fork();
+		ThreadedKernel.scheduler.increasePriority();
+		ThreadedKernel.scheduler.increasePriority();	
+		ThreadedKernel.scheduler.increasePriority();	
+		ThreadedKernel.scheduler.increasePriority();	
+		ThreadedKernel.scheduler.increasePriority();	
+		Machine.interrupt().disable();
+		threadZeroPriority = ThreadedKernel.scheduler.getEffectivePriority(KThread.currentThread());
+		Machine.interrupt().enable();
+		System.out.println("Before call to join: Thread 0's effective priority: " + threadZeroPriority);
+		newThread.join();
+		ThreadedKernel.scheduler.decreasePriority();
+		ThreadedKernel.scheduler.decreasePriority();	
+		ThreadedKernel.scheduler.decreasePriority();	
+		ThreadedKernel.scheduler.decreasePriority();	
+		ThreadedKernel.scheduler.decreasePriority();
 		*/
     }
     
